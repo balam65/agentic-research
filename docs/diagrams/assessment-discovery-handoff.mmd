@@ -1,0 +1,27 @@
+graph LR
+  subgraph P1["Assessment & Interrogation"]
+    PAYLOAD["Multimodal Input (Chat/PDF/Telemetry)"]
+    ROUTER["Ingestion File Router"]
+    INTENT["LLM Intent Extractor"]
+    BRIEF["Standardized research_brief YAML"]
+  end
+
+  subgraph P2["Discovery & Onboarding"]
+    CHECK["Catalog Check (domain/source)"]
+    CACHE["Pre-Built Evasion Tool Target"]
+    SME["SME Agent Feasibility Mapping"]
+    HITL["Requirement Ambiguity (Human Review)"]
+  end
+
+  PAYLOAD --> ROUTER
+  ROUTER --> INTENT
+  INTENT -- "Missing Required Fields" --> HITL
+  INTENT -- "Valid Intent" --> BRIEF
+
+  BRIEF --> CHECK
+  CHECK -- "Target Known" --> CACHE
+  CHECK -- "Target Unknown" --> SME
+  SME -- "Specs Mapped" --> SGEN["Scripting Repo Generation"]
+  
+  CACHE --> EXEC["Ready for Extraction Phase 3"]
+  SGEN --> EXEC

@@ -1,0 +1,29 @@
+graph TB
+  subgraph SCHED["Phase 1: Scheduling"]
+    Q["Job Queue Array"]
+    PULL["SLA Triggered Deployment"]
+  end
+
+  subgraph EXTR["Phase 3: Extraction Architecture"]
+    ROUTE["Adapter Routing (Browser/HTTP/PDF)"]
+    SPAWN["Dynamic Concurrent Node Spawning"]
+    PROXY["Residential/Datacenter Proxy Pool"]
+    SCRAPE["Payload Execution Engine"]
+  end
+
+  subgraph SENT["Phase 5: Sentinel Monitoring"]
+    MON["Failure Detection & Telemetry"]
+    RETRY["Exponential Backoff & Retry"]
+    ALERT["Human Escalation Dashboard"]
+  end
+
+  Q --> PULL
+  PULL --> ROUTE
+  ROUTE --> SPAWN
+  SPAWN --> PROXY
+  PROXY --> SCRAPE
+
+  SCRAPE -- "Timeout/IP Block" --> MON
+  MON --> RETRY
+  RETRY -.-> Q
+  MON -- "Hard Failure" --> ALERT

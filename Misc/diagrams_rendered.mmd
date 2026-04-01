@@ -1,0 +1,140 @@
+
+
+```mermaid
+graph TB
+  subgraph P0["Governance & Control"]
+    MA["Master Agent - Workflow Orchestration"]
+    COMP["Compliance Agent - Security Rules"]
+  end
+
+  subgraph P1["Assessment & Triggering"]
+    ASSESS["Assessment Agent - Intent Ingestion"]
+    SCHED["Scheduling Agent - Queue & SLA"]
+  end
+
+  subgraph P2["Deep Research"]
+    DISC["Discovery Agent - Target Mapping"]
+    SME["SME Agent - Onboarding & Edge Cases"]
+    SCRIPT["Scripting Agent - Tool Generation"]
+  end
+
+  subgraph P3["Production Hub"]
+    EXTR["Extraction Agent - Tool Router"]
+    SCALE["Production Agent - Scaling & Proxies"]
+  end
+
+  subgraph P4["Validation Core"]
+    TRANS["Transformation Agent - Schema Format"]
+    QA["QA Agent - Trust Verification"]
+  end
+
+  subgraph P5["Delivery & Observability"]
+    DELIV["Delivery Agent - Data Push Pipeline"]
+    SENT["Sentinel Agent - Alerts & Logging"]
+    SUPP["Support Agent - Helpdesk & Exceptions"]
+  end
+
+  MA --> P1
+  COMP -.-> MA
+  P1 --> P2
+  P2 --> P3
+  P3 --> P4
+  P4 --> P5
+  SENT -.-> P3
+  SUPP -.-> MA
+```
+
+---
+
+## 2. Extraction Orchestration Data Flow
+
+```mermaid
+graph LR
+  IN["Client Incoming Request"] --> ING["Ingestion Router"]
+  ING --> INT["Intent Validation Engine"]
+  INT --> BR["Standard Research Brief"]
+  
+  BR --> FAST{"Known Source?"}
+  FAST -- "Yes" --> SCR["Pre-Built Fast-Track Tool"]
+  FAST -- "No" --> SME["SME Deep Mapping"]
+  SME --> SGEN["Script Generation Node"]
+  SGEN --> SCR
+
+  SCR --> ORCH["Extraction Orchestrator"]
+  ORCH --> ADAPT["Browser and API Adapters"]
+  ADAPT --> RAW["Raw Unstructured Payload"]
+  
+  RAW --> TRANS["Target Schema Mapping"]
+  TRANS --> QA["Validation & Trust Auditor"]
+  QA --> OUT["Secure Extracted Deliverable"]
+```
+
+---
+
+## 3. Assessment & Discovery Intent Handoff
+
+```mermaid
+graph LR
+  subgraph P1["Assessment & Interrogation"]
+    PAYLOAD["Multimodal Input"]
+    ROUTER["Ingestion File Router"]
+    INTENT["LLM Intent Extractor"]
+    BRIEF["Standardized YAML"]
+  end
+
+  subgraph P2["Discovery & Onboarding"]
+    CHECK["Catalog Check"]
+    CACHE["Pre-Built Evasion Tool"]
+    SME["SME Agent Mapping"]
+    HITL["Human Review"]
+  end
+
+  PAYLOAD --> ROUTER
+  ROUTER --> INTENT
+  INTENT -- "Missing Required Fields" --> HITL
+  INTENT -- "Valid Intent" --> BRIEF
+
+  BRIEF --> CHECK
+  CHECK -- "Target Known" --> CACHE
+  CHECK -- "Target Unknown" --> SME
+  SME -- "Specs Mapped" --> SGEN["Scripting Repo Generation"]
+  
+  CACHE --> EXEC["Ready for Extraction"]
+  SGEN --> EXEC
+```
+
+---
+
+## 4. Extraction Scaling & Sentinel Pipeline
+
+```mermaid
+graph TB
+  subgraph SCHED["Phase 1: Scheduling"]
+    Q["Job Queue Array"]
+    PULL["SLA Triggered Deployment"]
+  end
+
+  subgraph EXTR["Phase 3: Extraction Architecture"]
+    ROUTE["Adapter Routing"]
+    SPAWN["Dynamic Node Spawning"]
+    PROXY["Proxy Pool"]
+    SCRAPE["Payload Execution Engine"]
+  end
+
+  subgraph SENT["Phase 5: Sentinel Monitoring"]
+    MON["Failure Detection"]
+    RETRY["Exponential Backoff"]
+    ALERT["Human Escalation"]
+  end
+
+  Q --> PULL
+  PULL --> ROUTE
+  ROUTE --> SPAWN
+  SPAWN --> PROXY
+  PROXY --> SCRAPE
+
+  SCRAPE -- "Timeout/IP Block" --> MON
+  MON --> RETRY
+  RETRY -.-> Q
+  MON -- "Hard Failure" --> ALERT
+```

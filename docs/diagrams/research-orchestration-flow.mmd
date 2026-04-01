@@ -1,0 +1,18 @@
+graph LR
+  IN["Client Incoming Request"] --> ING["Ingestion Router"]
+  ING --> INT["Intent Validation Engine"]
+  INT --> BR["Standard Research Brief"]
+  
+  BR --> FAST{"Known Source?"}
+  FAST -- Yes --> SCR["Pre-Built Fast-Track Tool"]
+  FAST -- No --> SME["SME Deep Mapping"]
+  SME --> SGEN["Script Generation Node"]
+  SGEN --> SCR
+
+  SCR --> ORCH["Extraction Orchestrator"]
+  ORCH --> ADAPT["Browser / API Adapters"]
+  ADAPT --> RAW["Raw Unstructured Payload"]
+  
+  RAW --> TRANS["Target Schema Mapping"]
+  TRANS --> QA["Validation & Trust Auditor"]
+  QA --> OUT["Secure Extracted Deliverable"]

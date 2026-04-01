@@ -1,0 +1,47 @@
+{
+  "diagrams": [
+    {
+      "id": "agentic-research-architecture",
+      "title": "Agentic Research Ecosystem Architecture",
+      "source": "docs/diagrams/agentic-research-architecture.mmd",
+      "targets": [
+        { "file": "docs/implementation/00-master-plan.md" },
+        { "file": "docs/implementation/01-master-orchestration.md" }
+      ],
+      "updated": "2026-04-01",
+      "notes": "High level Master Agent phase mapping"
+    },
+    {
+      "id": "research-orchestration-flow",
+      "title": "Extraction Orchestration Data Flow",
+      "source": "docs/diagrams/research-orchestration-flow.mmd",
+      "targets": [
+        { "file": "docs/implementation/00-master-plan.md" },
+        { "file": "docs/implementation/08-extraction-orchestration.md" }
+      ],
+      "updated": "2026-04-01"
+    },
+    {
+      "id": "extraction-scaling-pipeline",
+      "title": "Production & Scaling Node Execution",
+      "source": "docs/diagrams/extraction-scaling-pipeline.mmd",
+      "targets": [
+        { "file": "docs/implementation/08-extraction-orchestration.md" },
+        { "file": "docs/implementation/09-production-scaling.md" },
+        { "file": "docs/implementation/13-sentinel-monitoring.md" }
+      ],
+      "updated": "2026-04-01"
+    },
+    {
+      "id": "assessment-discovery-handoff",
+      "title": "Requirement Intent to Technical Scripting Handoff",
+      "source": "docs/diagrams/assessment-discovery-handoff.mmd",
+      "targets": [
+        { "file": "docs/implementation/03-assessment-interrogation.md" },
+        { "file": "docs/implementation/05-source-discovery.md" },
+        { "file": "docs/implementation/06-onboarding-sme.md" }
+      ],
+      "updated": "2026-04-01"
+    }
+  ]
+}

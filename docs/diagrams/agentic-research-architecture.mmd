@@ -1,0 +1,41 @@
+graph TB
+  subgraph P0["Governance & Control"]
+    MA["Master Agent — Workflow Orchestration"]
+    COMP["Compliance Agent — Security Rules"]
+  end
+
+  subgraph P1["Assessment & Triggering"]
+    ASSESS["Assessment Agent — Intent Ingestion"]
+    SCHED["Scheduling Agent — Queue & SLA"]
+  end
+
+  subgraph P2["Deep Research"]
+    DISC["Discovery Agent — Target Mapping"]
+    SME["SME Agent — Onboarding & Edge Cases"]
+    SCRIPT["Scripting Agent — Tool Generation"]
+  end
+
+  subgraph P3["Production Hub"]
+    EXTR["Extraction Agent — Tool Router"]
+    SCALE["Production Agent — Scaling & Proxies"]
+  end
+
+  subgraph P4["Validation Core"]
+    TRANS["Transformation Agent — Schema Format"]
+    QA["QA Agent — Trust Verification"]
+  end
+
+  subgraph P5["Delivery & Observability"]
+    DELIV["Delivery Agent — Data Push Pipeline"]
+    SENT["Sentinel Agent — Alerts & Logging"]
+    SUPP["Support Agent — Helpdesk & Exceptions"]
+  end
+
+  MA --> P1
+  COMP -.-> MA
+  P1 --> P2
+  P2 --> P3
+  P3 --> P4
+  P4 --> P5
+  SENT -.-> P3
+  SUPP -.-> MA
