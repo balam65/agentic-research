@@ -52,7 +52,7 @@ Even if the [Production Scales (04)](04-production-scaling-analysis.md) allow hi
 
 ## 3. Delivery Destinations
 
-Map exactly how the successfully validated payload leaves the Agentic OS ecosystem.
+Map exactly how the successfully validated payload leaves the Agentic Research ecosystem.
 
 | Delivery Format | Route | Configuration Checks |
 |---|---|---|

@@ -44,7 +44,7 @@ Based on the [Doc 01 SLA Requirement](01-requirement-assessment-analysis.md) (e.
 - **Example:** 69 ÷ 45 = ~2 Concurrent workers required. This target scales easily.
 
 > [!WARNING]
-> If auto-scale calculation shows a required compute footprint that exceeds the daily execution budget defined for this tier, the Agentic OS Orchestrator must immediately signal an SLA breach warning to the user.
+> If auto-scale calculation shows a required compute footprint that exceeds the daily execution budget defined for this tier, the Agentic Research Orchestrator must immediately signal an SLA breach warning to the user.
 
 ---
 

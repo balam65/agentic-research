@@ -64,7 +64,7 @@ Based on the complexity above, recommend the exact execution toolset.
 
 ---
 
-## 4. Metadata for Agentic OS
+## 4. Metadata for Agentic Research
 
 This analysis produces metadata consumed directly by the Scripting Agent.
 

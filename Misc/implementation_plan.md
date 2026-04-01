@@ -1,6 +1,6 @@
 # Agentic Research Architectures — Implementation Plan
 
-This plan details the creation of a standard set of structural flowcharts for the `agentic-research` project, modeled strictly on the conventions established in the `agentic-os` `docs/diagrams` folder. We will use Mermaid (`.mmd`) to depict the technical relationships mapped out in the implementation `.md` phase files.
+This plan details the creation of a standard set of structural flowcharts for the `agentic-research` project, modeled strictly on the conventions established in the `agentic-research` `docs/diagrams` folder. We will use Mermaid (`.mmd`) to depict the technical relationships mapped out in the implementation `.md` phase files.
 
 ## Proposed Changes
 
@@ -8,7 +8,7 @@ We will create a new directory `docs/diagrams` in the `agentic-research` project
 
 ### Agentic Research Ecosystem Diagrams
 
-#### [NEW] [agentic-research-architecture.mmd](file:///Users/balasubramanianmahadevan/Documents/agentic-os/agentic-research/docs/diagrams/agentic-research-architecture.mmd)
+#### [NEW] [agentic-research-architecture.mmd](file:///Users/balasubramanianmahadevan/Documents/agentic-research/docs/diagrams/agentic-research-architecture.mmd)
 A high-level systems diagram showing the Master Agent orchestrating the 5 main phases:
 - **Phase 1: Requirement & Assessment** (Assessment, Scheduling)
 - **Phase 2: Deep Research** (Discovery, Onboarding SME, Scripting)
@@ -16,23 +16,23 @@ A high-level systems diagram showing the Master Agent orchestrating the 5 main p
 - **Phase 4: Transformation & Validation** (Transformation, QA)
 - **Phase 5: Delivery & Support** (Delivery, System Support, Sentinel)
 
-#### [NEW] [research-orchestration-flow.mmd](file:///Users/balasubramanianmahadevan/Documents/agentic-os/agentic-research/docs/diagrams/research-orchestration-flow.mmd)
+#### [NEW] [research-orchestration-flow.mmd](file:///Users/balasubramanianmahadevan/Documents/agentic-research/docs/diagrams/research-orchestration-flow.mmd)
 A sequence mapping the data handoffs:
 Requirement Payload (Chat/Doc/Legacy) -> Multimodal Ingestion Router -> `research_brief` -> Discovery Map -> Script / Evasion Tools -> Raw Scraped Payload -> Standardized Schema -> Target Output (API/SFTP).
 
-#### [NEW] [extraction-scaling-pipeline.mmd](file:///Users/balasubramanianmahadevan/Documents/agentic-os/agentic-research/docs/diagrams/extraction-scaling-pipeline.mmd)
+#### [NEW] [extraction-scaling-pipeline.mmd](file:///Users/balasubramanianmahadevan/Documents/agentic-research/docs/diagrams/extraction-scaling-pipeline.mmd)
 A deep-dive on the highly technical execution phase:
 Orchestrator Node routing requests to tools (Browser Adapter / HTTP Adapter / PDF Reader) -> Dynamic scaling systems -> Proxy rotation -> Sentinel failure detection loop.
 
-#### [NEW] [assessment-discovery-handoff.mmd](file:///Users/balasubramanianmahadevan/Documents/agentic-os/agentic-research/docs/diagrams/assessment-discovery-handoff.mmd)
+#### [NEW] [assessment-discovery-handoff.mmd](file:///Users/balasubramanianmahadevan/Documents/agentic-research/docs/diagrams/assessment-discovery-handoff.mmd)
 A deep-dive on the early intent-gathering and fast-tracking logic:
 Connecting the `Assessment & Interrogation Agent` with the `Source Discovery Agent` to show how intent is verified, missing constraints raise human-in-the-loop (HITL) errors, and known sources are fast-tracked compared to unknown sources sent to the SME Agent.
 
-#### [NEW] [registry.json](file:///Users/balasubramanianmahadevan/Documents/agentic-os/agentic-research/docs/diagrams/registry.json)
-The central metadata registry indexing these new `.mmd` diagrams to the target markdown implementations mapping them to `docs/implementation/*`, following the standard `agentic-os` deployment pipeline logic.
+#### [NEW] [registry.json](file:///Users/balasubramanianmahadevan/Documents/agentic-research/docs/diagrams/registry.json)
+The central metadata registry indexing these new `.mmd` diagrams to the target markdown implementations mapping them to `docs/implementation/*`, following the standard `agentic-research` deployment pipeline logic.
 
-#### [NEW] [README.md](file:///Users/balasubramanianmahadevan/Documents/agentic-os/agentic-research/docs/diagrams/README.md)
-Instructions on how the mermaid diagrams are embedded, matching the boilerplate found in `agentic-os/docs/diagrams/README.md`.
+#### [NEW] [README.md](file:///Users/balasubramanianmahadevan/Documents/agentic-research/docs/diagrams/README.md)
+Instructions on how the mermaid diagrams are embedded, matching the boilerplate found in `docs/diagrams/README.md`.
 
 ## User Review Required
 
