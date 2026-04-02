@@ -2,7 +2,7 @@
 
 ## Overview (Human Review)
 - **What this phase accomplishes:** Builds the Extraction/Orchestration Agent to manage the actual pulling of data. It Maps the `source_type` and `dom_selectors` (established in Phase 2) to the correct technical execution tool (e.g., headless browser, simple HTTP request, PDF reader).
-- **Key design decisions and trade-offs:** Executing extraction centrally via this Orchestrator enables standardization of raw outputs. The trade-off is high peak CPU/Memory load if too many headless browsers spawn at once.
+- **Key design decisions and trade-offs:** Executing extraction centrally via this Orchestrator enables standardization of raw outputs. The trade-off is high peak CPU/Memory load if too many headless browsers spawn at once. The extraction layer must also own machine-run artifacts, output staging, and clean shutdown signaling.
 - **Prerequisites and outputs:**
   - *Prerequisites:* 07-scripting-repository.md completed.
   - *Outputs:* `orchestrator_node.py` and `extraction_adapters.py`.
@@ -25,6 +25,17 @@
 **Artifacts to produce:**
 - `agentic-research/agents/extraction/extraction_adapters.py`
 **Instruction:**
-> Write `extraction_adapters.py`. Implement class interfaces for `BrowserAdapter` and `HTTPAdapter`. They must accept a URL and `dom_selectors`. Use the selectors to isolate the data points and return a raw JSON payload mapping `topic` to `extracted_value`. 
+> Write `extraction_adapters.py`. Implement class interfaces for `BrowserAdapter` and `HTTPAdapter`. They must accept a URL and `dom_selectors`. Use the selectors to isolate the data points and return a raw JSON payload mapping `topic` to `extracted_value`. Persist each source run into a predefined destination folder for downstream processing and emit machine-run metadata that can be used to terminate extraction resources safely after completion.
 **Acceptance criteria:**
 - Adapters return a unified JSON payload irrespective of the underlying scraping method.
+- Each run writes to a predefined output destination and exposes completion metadata for resource shutdown.
+
+### Step 3: Extraction Machine Runtime Contract
+**Objective:** Standardize machine-level extraction launch behavior.
+**Prerequisites:** Steps 1-2 completed.
+**Artifacts to produce:**
+- `agentic-research/agents/extraction/runtime_contract.yaml`
+**Instruction:**
+> Define `runtime_contract.yaml`. Include batch-launch metadata for extraction machines, destination folder conventions for extracted payloads, and the post-run signal required by Production to terminate hired cloud resources.
+**Acceptance criteria:**
+- The contract defines launch artifacts, output destinations, and shutdown signaling expectations.

@@ -25,6 +25,7 @@
 **Artifacts to produce:**
 - `agentic-research/agents/delivery/delivery_engine.py`
 **Instruction:**
-> Implement `delivery_engine.py`. Build connectors for `SFTP`, `REST API POST`, and `AWS S3 Bulk Upload`. Confirm the return codes (200 OK or 201 Created). Update the Master Agent's state database marking the run as 'COMPLETED' upon successful transmission.
+> Implement `delivery_engine.py`. Build connectors for `SFTP`, `REST API POST`, `AWS S3 Bulk Upload`, and direct client database delivery. Confirm the return codes (200 OK or 201 Created) or equivalent database-write success condition. Perform delivery integrity checks after transfer, retry failed deliveries, notify stakeholders on delivery failure, and escalate persistent failures. Update the Master Agent's state database marking the run as 'COMPLETED' upon successful transmission.
 **Acceptance criteria:**
 - Connectors function and state correctly shifts to COMPLETED.
+- Delivery integrity is verified and failure notification/escalation behavior is defined.

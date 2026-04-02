@@ -15,9 +15,10 @@
 **Artifacts to produce:**
 - `agentic-research/agents/production/proxy_rotator.py`
 **Instruction:**
-> You are the Production Agent. Write `proxy_rotator.py`. Integrate with the Compliance Agent's leased credentials. Implement a method `get_next_proxy(domain)` that rotates IP addresses and user agents, ensuring no single IP requests the same domain more than establishing rate-limits allow (e.g., 5 req/min). 
+> You are the Production Agent. Write `proxy_rotator.py`. Integrate with the Compliance Agent's leased credentials. Implement a method `get_next_proxy(domain)` that rotates IP addresses and user agents, ensuring no single IP requests the same domain more than establishing rate-limits allow (e.g., 5 req/min). Track non-functional proxies separately and expose them for health reporting and replacement.
 **Acceptance criteria:**
 - Script safely returns masked proxy strings and increments usage counters.
+- Proxy health state is captured so failed proxies can be reported and retired.
 
 ### Step 2: Retry and Backoff Logic
 **Objective:** Handle intermittent extraction failures gracefully.
@@ -25,6 +26,7 @@
 **Artifacts to produce:**
 - `agentic-research/agents/production/scale_manager.py`
 **Instruction:**
-> Write `scale_manager.py`. Wrap the Execution Adapter calls from Step 08 with a "Three-Strike" rule. If an extraction fails due to timeout or 503, apply an exponential backoff. If it fails 3 times, log the `error_code` and route the item to `missing_areas` in the payload for SME review.
+> Write `scale_manager.py`. Wrap the Execution Adapter calls from Step 08 with a "Three-Strike" rule. If an extraction fails due to timeout or 503, apply an exponential backoff. If it fails 3 times, log the `error_code` and route the item to `missing_areas` in the payload for SME review. Record call consumption for billing and operational reporting, and emit a completion or failure signal that lets downstream infrastructure terminate hired cloud resources once the run is done.
 **Acceptance criteria:**
 - Retry loop functions correctly. Logs reflect backoff durations.
+- Billing-call counters and end-of-run lifecycle signals are produced.
