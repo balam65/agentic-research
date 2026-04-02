@@ -21,15 +21,17 @@
 - Logs include `agent_id` and timestamp without exposing the secret itself.
 
 ### Step 2: Define Data Masking Policies
-**Objective:** Define the rules for the Compliance Agent to scan leaving payloads for exposed credentials or PII.
-**Prerequisites:** Step 1 completed.
+**Objective:** Define the rules for the Compliance Agent to scan leaving payloads for exposed credentials or PII — beginning with target-specific rules inherited from the analysis framework before adding system-wide standards.
+**Prerequisites:** Step 1 completed; `target-pipeline-config.yaml` available in the target registry (populated by `config_ingestion.py` in 06-onboarding-sme.md Step 0).
 **Artifacts to produce:**
 - `agentic-research/agents/compliance/compliance_audit_rules.yaml`
 **Instruction:**
-> Generate the `compliance_audit_rules.yaml` file. Define exact regex patterns for API keys, AWS keys, credit cards, and email addresses. Configure the Compliance Agent's action when a match is found to strictly "MASK_AND_FLAG" before allowing the payload to pass to the Delivery Agent.
+> Generate `compliance_audit_rules.yaml` in two passes. **Pass 1 (Target-Specific):** Read the active `target-pipeline-config.yaml` from the target registry. Check the `compliance.masking_enabled` flag and load any target-specific PII exposure warnings sourced from `06-compliance-delivery-analysis.md` (e.g., GDPR/CCPA passenger data, PCI-DSS card fields). Pre-populate the YAML with per-target masking entries and the `robots_txt_waiver` status. **Pass 2 (System-Wide):** Append the standard system-wide regex patterns for API keys, AWS keys, credit card numbers, and email addresses. Set the action for all rules to strictly `MASK_AND_FLAG` before the payload reaches the Delivery Agent.
 **Acceptance criteria:**
-- YAML contains standard regex keys.
-- Action explicitly set to MASK_AND_FLAG.
+- YAML includes both target-specific masking entries (from analysis config) and system-wide standard patterns.
+- `robots_txt_waiver` status is recorded per target.
+- Action for all rules is explicitly set to `MASK_AND_FLAG`.
+- If `compliance.masking_enabled` is false for a target, the Compliance Agent must log a `COMPLIANCE_OVERRIDE` warning before proceeding.
 
 ### Step 3: Compliance Awareness and Review Loop
 **Objective:** Preserve non-technical compliance responsibilities required by the operating model.

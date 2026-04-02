@@ -31,3 +31,15 @@
 **Acceptance criteria:**
 - Python script executes without syntax errors.
 - Logging captures state transitions accurately.
+
+### Step 3: Initialize Target Registry
+**Objective:** Define the canonical Target Registry — the single source of truth that synchronizes per-target configuration data across the Scripting, Onboarding, and Sentinel agents, eliminating the duplicate-store problem between `script_catalog_db` and `knowledge_repo_schema.yaml`.
+**Prerequisites:** Step 1 completed.
+**Artifacts to produce:**
+- `agentic-research/orchestration/target_registry_schema.sql`
+**Instruction:**
+> Write `target_registry_schema.sql`. Define a `target_registry` table in Postgres that serves as the authoritative record for every onboarded extraction target. The schema must include: `target_id` (UUID PK), `domain` (text, unique), `pipeline_config` (JSONB — stores the full `target-pipeline-config.yaml` fields), `script_catalog_ref` (FK → `scripts.id`), `knowledge_repo_ref` (FK → `knowledge_repo_schema` record), `readiness_score` (numeric 1–5), `daily_cost_estimate` (numeric), `status` (ENUM: PENDING, ACTIVE, DEPRECATED), and `last_synced_at` (timestamp). Extend `state_schema.sql` with a FK from `job_runs.target_id` → `target_registry.target_id`. Document the sync rule: whenever `script_catalog_db` or `knowledge_repo_schema.yaml` is updated for a target, `target_registry.last_synced_at` must be refreshed and `pipeline_config` reconciled.
+**Acceptance criteria:**
+- Valid Postgres SQL schema with all specified columns and constraints.
+- FK relationships from `job_runs` to `target_registry` are enforced.
+- Schema comments document the sync rule for `script_catalog_db` and `knowledge_repo_schema.yaml`.

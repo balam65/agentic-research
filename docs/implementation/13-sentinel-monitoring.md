@@ -30,3 +30,16 @@
 **Acceptance criteria:**
 - Subscriptions function correctly and messages format appropriately for Slack/PagerDuty.
 - Daily summaries, billing-log forwarding, and machine re-allocation actions are defined.
+
+### Step 3: Per-Target Fragility Baseline Integration
+**Objective:** Load target-specific alerting thresholds from the analysis bridge configs rather than applying uniform generic SLA floors across all targets.
+**Prerequisites:** Steps 1–2 completed; `target-pipeline-config.yaml` ingested via `config_ingestion.py` (06-onboarding-sme.md Step 0).
+**Artifacts to produce:**
+- Update `agentic-research/agents/sentinel/latency_tracker.py` (extends Step 1 artifact)
+**Instruction:**
+> Extend `latency_tracker.py`. For each active job, load the target's `alerting_thresholds` block from the `target-pipeline-config.yaml` in the target registry. Use `acceptable_extraction_null_rate` as the null-rate ceiling and `confidence_score_drop` as the confidence-score drop floor for this target, overriding any generic system-wide defaults. If a target has known fragility flags (e.g., `A/B Testing Detected`, `Ephemeral Tokens`) from the analysis framework, reduce the default `continuous_failures` alarm threshold by 50% to catch degradation earlier on these high-risk targets.
+**Acceptance criteria:**
+- `latency_tracker.py` reads `alerting_thresholds` from `target-pipeline-config.yaml` for every monitored job.
+- Generic SLA floors are only used as a fallback when no target-specific config exists.
+- High-fragility targets trigger alarms at half the default `continuous_failures` threshold.
+- A log entry is written confirming which threshold source (target-specific vs generic) was applied for each job.
