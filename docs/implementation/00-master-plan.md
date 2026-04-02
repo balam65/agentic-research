@@ -9,12 +9,12 @@
 | Decision | Choice | Rationale |
 |---|---|---|
 | Core Orchestration | Master Agent | Centralized control system ensuring the agent ecosystem is scalable, reliable, and sequenced efficiently. |
-| Requirement & Intent | Assessment & Interrogation | **Multimodal Ingestion:** Derives intent via direct conversation, parsing requirement docs, or analyzing legacy processes to generate standardized briefs. |
-| Deep Research & Feasibility | Discovery & Onboarding | **Conditional Fast-Tracking:** First checks the pre-built script/evasion library; maps unknown sources via specialist deep linking only when existing tools don't suffice. |
-| Data Capture Engine | Scripting, Extraction & Production | Reusable script library combined with dynamic cloud scaling, proxies routing, and retry logic for robust payload capture. |
+| Requirement & Intent | Assessment & Interrogation | **Multimodal Ingestion:** Derives intent via Shop Manager, API, email/manual, chat, or requirement docs, generates request IDs, validates required inputs, and produces standardized briefs. |
+| Deep Research & Feasibility | Discovery & Onboarding | **Conditional Fast-Tracking:** First checks the pre-built script/evasion library; maps unknown sources via specialist deep linking only when existing tools don't suffice, while preserving onboarding knowledge, resource planning, and schedule alignment. |
+| Data Capture Engine | Scripting, Extraction & Production | Reusable script library combined with dynamic cloud scaling, output staging, proxy health management, billing/call logging, and retry logic for robust payload capture. |
 | Validation & Quality | QA & Validation Agents | Cross-references data, performs schema checks, assigns trust/confidence scores, flags logic or range conflicts. |
-| Output Standardization | Transformation & Delivery | Formats raw extracts to customized client schemas (CSV/JSON/API) and manages the secure delivery push. |
-| Continuous Operations | Sentinel, Support, Compliance | Monitors system SLA latency, handles internal/client queries, and ensures data exposure/security laws are upheld. |
+| Output Standardization | Transformation & Delivery | Formats raw extracts to customized client schemas (CSV/JSON/API/DB) and manages secure delivery push with integrity checks and escalation paths. |
+| Continuous Operations | Sentinel, Support, Compliance | Monitors system SLA latency, queue allocation, delivery summaries, billing signals, support case handling, and data exposure/security laws. |
 
 ---
 
@@ -74,11 +74,11 @@ graph TB
 ## Dependency Rules
 
 1. **Phase 0 (Governance)** must exist first. The Master Agent orchestrates the sequence, and the Compliance Agent rules must validate system access globally.
-2. **Phase 1 (Assessment)** is the entry point. It requires client inputs to generate the `research_brief` (via Interrogation) and schedules the jobs.
-3. **Phase 2 (Onboarding)** relies on the brief to discover deep-linked sources, perform feasibility checks, handle edge cases via SME, and develop extraction scripts.
-4. **Phase 3 (Production)** depends on Phase 2 scripts. It handles infrastructure scaling, IP proxies, and executes data capture (via Orchestration tooling).
+2. **Phase 1 (Assessment)** is the entry point. It requires client inputs to generate the `research_brief` (via Interrogation), assign request tracking metadata, validate dependencies, and schedule the jobs.
+3. **Phase 2 (Onboarding)** relies on the brief to discover deep-linked sources, perform feasibility checks, maintain source/client knowledge, align test and production resources, handle edge cases via SME, and develop extraction scripts.
+4. **Phase 3 (Production)** depends on Phase 2 scripts. It handles infrastructure scaling, IP proxies, output staging, billing/call tracking, and executes data capture (via Orchestration tooling).
 5. **Phase 4 (Validation)** requires the raw payload from Phase 3 to map to client schemas (Transformation), format, and audit against quality standards (QA).
-6. **Phase 5 (Delivery)** pushes the validated structured data. The Sentinel Agent continuously monitors the Extraction nodes in parallel to prevent queue bottlenecks.
+6. **Phase 5 (Delivery)** pushes the validated structured data with delivery-integrity checks, escalation workflows, and operational summaries. The Sentinel Agent continuously monitors the Extraction nodes in parallel to prevent queue bottlenecks.
 
 ---
 
@@ -87,19 +87,19 @@ graph TB
 | # | Document | Phase | Dependencies | Focus / Assigned Agent |
 |---|---|---|---|---|
 | 01 | [01-master-orchestration.md](01-master-orchestration.md) | 0 | — | Master Agent: Control Center, Pipeline Design |
-| 02 | [02-compliance-security.md](02-compliance-security.md) | 0 | 01 | Compliance Agent: Credentials, Audit, Risk |
-| 03 | [03-assessment-interrogation.md](03-assessment-interrogation.md) | 1 | 01 | Assessment/Interrogation Agent: Multimodal Ingestion, Intent Parsing |
-| 04 | [04-scheduling-triggering.md](04-scheduling-triggering.md) | 1 | 03 | Scheduling Agent: Queueing, SLA Constraints |
+| 02 | [02-compliance-security.md](02-compliance-security.md) | 0 | 01 | Compliance Agent: Credentials, Audit, Risk, Awareness |
+| 03 | [03-assessment-interrogation.md](03-assessment-interrogation.md) | 1 | 01 | Assessment/Interrogation Agent: Multimodal Ingestion, Request Tracking, Intent Parsing |
+| 04 | [04-scheduling-triggering.md](04-scheduling-triggering.md) | 1 | 03 | Scheduling Agent: Queueing, Input Preparation, SLA Constraints |
 | 05 | [05-source-discovery.md](05-source-discovery.md) | 2 | 03 | Discovery Agent: Fast-tracking, Deep Links |
-| 06 | [06-onboarding-sme.md](06-onboarding-sme.md) | 2 | 05 | Onboarding/SME Agent: Feasibility, Evasion Configs |
-| 07 | [07-scripting-repository.md](07-scripting-repository.md) | 2 | 06 | Scripting Agent: Script Development, Repo Mgmt |
-| 08 | [08-extraction-orchestration.md](08-extraction-orchestration.md) | 3 | 07 | Extraction Agent: Tool Selection (SPA/PDF), Run Logic |
-| 09 | [09-production-scaling.md](09-production-scaling.md) | 3 | 08 | Production Agent: Dynamic Scale, Proxy Rotation |
+| 06 | [06-onboarding-sme.md](06-onboarding-sme.md) | 2 | 05 | Onboarding/SME Agent: Feasibility, Knowledge Repo, Resource Planning, Evasion Configs |
+| 07 | [07-scripting-repository.md](07-scripting-repository.md) | 2 | 06 | Scripting Agent: Script Development, Validation, Repo Mgmt |
+| 08 | [08-extraction-orchestration.md](08-extraction-orchestration.md) | 3 | 07 | Extraction Agent: Tool Selection (SPA/PDF), Output Staging, Run Logic |
+| 09 | [09-production-scaling.md](09-production-scaling.md) | 3 | 08 | Production Agent: Dynamic Scale, Proxy Rotation, Billing Signals |
 | 10 | [10-transformation-mapping.md](10-transformation-mapping.md) | 4 | 09 | Transformation Agent: Schema Formatting (CSV/JSON) |
 | 11 | [11-qa-validation.md](11-qa-validation.md) | 4 | 10 | QA/Validation Agent: Confidence Scores, Triangulation |
-| 12 | [12-delivery-pipelines.md](12-delivery-pipelines.md) | 5 | 11 | Delivery Agent: SFTP/API Push, Export Management |
-| 13 | [13-sentinel-monitoring.md](13-sentinel-monitoring.md) | 5 | 09 | Sentinel Agent: Failure Detection, Run Tracking |
-| 14 | [14-system-support.md](14-system-support.md) | 5 | 12 | Support Agent: Internal/External Helpdesk, Comms |
+| 12 | [12-delivery-pipelines.md](12-delivery-pipelines.md) | 5 | 11 | Delivery Agent: SFTP/API/DB Push, Export Management, Integrity Checks |
+| 13 | [13-sentinel-monitoring.md](13-sentinel-monitoring.md) | 5 | 09 | Sentinel Agent: Failure Detection, Queue Health, Run Tracking |
+| 14 | [14-system-support.md](14-system-support.md) | 5 | 12 | Support Agent: Internal/External Helpdesk, Comms, Case Tracking |
 
 ---
 
