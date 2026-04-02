@@ -1,0 +1,155 @@
+{
+  "name": "Master Research Orchestration",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "research-request",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook: Ingestion",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Analyze incoming research request: {{ $json.body }}. Use the Assessment Agent Prompt to generate the research_brief.",
+        "options": {}
+      },
+      "id": "assessment-agent",
+      "name": "AI Agent: Assessment",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.2,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "job_runs",
+        "columns": [
+            "intent_hash",
+            "client_id",
+            "current_status",
+            "research_brief"
+        ]
+      },
+      "id": "postgres-insert",
+      "name": "Postgres: Create Job",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+        "parameters": {
+          "conditions": {
+            "boolean": [
+              {
+                "value1": "={{ $node[\"AI Agent: Assessment\"].json[\"confidence\"] > 0.7 }}",
+                "value2": true
+              }
+            ]
+          }
+        },
+        "id": "if-node",
+        "name": "If: Confidence High?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 1,
+        "position": [
+          1000,
+          300
+        ]
+    },
+    {
+        "parameters": {
+          "workflowId": "discovery-subworkflow",
+          "mode": "each"
+        },
+        "id": "discovery-trigger",
+        "name": "Execute: Phase 2 Discovery",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1,
+        "position": [
+          1200,
+          200
+        ]
+    },
+    {
+        "parameters": {
+          "chatId": "support-channel",
+          "text": "=Low confidence on request: {{ $json.body.intent_hash }}. Human review required."
+        },
+        "id": "slack-alert",
+        "name": "Slack: HITL Alert",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 1,
+        "position": [
+          1200,
+          450
+        ]
+    }
+  ],
+  "connections": {
+    "Webhook: Ingestion": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: Assessment": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Create Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres: Create Job": {
+      "main": [
+        [
+          {
+            "node": "If: Confidence High?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Confidence High?": {
+      "main": [
+        [
+          {
+            "node": "Execute: Phase 2 Discovery",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack: HITL Alert",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  }
+}

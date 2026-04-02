@@ -1,0 +1,259 @@
+{
+  "name": "Phase 3: Production & Data Capture",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowId": "discovery-subworkflow",
+        "mode": "each"
+      },
+      "id": "trigger-phase-3",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Load proxy_handler.js contents\nconst rotateConfig = require('./utils/proxy_handler.js');\nreturn rotateConfig;"
+      },
+      "id": "proxy-rotator",
+      "name": "Code: Proxy Rotator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $node[\"Execute Workflow Trigger\"].json[\"source_type\"] }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "SPA",
+              "output": 1
+            },
+            {
+              "value2": "Static HTML",
+              "output": 0
+            }
+          ]
+        }
+      },
+      "id": "source-router",
+      "name": "Switch: Source Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $node[\"Execute Workflow Trigger\"].json[\"target_url\"] }}",
+        "options": {
+          "proxy": "= {{ $node[\"Code: Proxy Rotator\"].json[\"proxy\"] }}",
+          "headers": "= {{ $node[\"Code: Proxy Rotator\"].json[\"headers\"] }}"
+        }
+      },
+      "id": "http-adapter",
+      "name": "HTTP: Static Extractions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1000,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "action": "goto",
+        "url": "={{ $node[\"Execute Workflow Trigger\"].json[\"target_url\"] }}",
+        "options": {
+          "stealth": true,
+          "proxy": "= {{ $node[\"Code: Proxy Rotator\"].json[\"proxy\"] }}"
+        }
+      },
+      "id": "browser-adapter",
+      "name": "Browser: Playwright Node",
+      "type": "n8n-nodes-base.playwright",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Using the raw HTML from extraction: {{ $json.body }}. Extract values for fields: {{ $node[\"Execute Workflow Trigger\"].json[\"topic_list\"] }} using the provided selectors: {{ $node[\"Execute Workflow Trigger\"].json[\"selectors\"] }}.",
+        "options": {}
+      },
+      "id": "extraction-agent",
+      "name": "AI Agent: Map Results",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.2,
+      "position": [
+        1250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $node[\"AI Agent: Map Results\"].json[\"success\"] }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "success-check",
+      "name": "If: Strike Check?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-retry",
+      "name": "Wait: Exponential Backoff",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        550
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "phase-4-transformation",
+        "mode": "each"
+      },
+      "id": "transform-trigger",
+      "name": "Execute: Phase 4 Transform",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code: Proxy Rotator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Proxy Rotator": {
+      "main": [
+        [
+          {
+            "node": "Switch: Source Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Source Type": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Static Extractions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Browser: Playwright Node",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTTP: Static Extractions": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Map Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Browser: Playwright Node": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Map Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: Map Results": {
+      "main": [
+        [
+          {
+            "node": "If: Strike Check?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Strike Check?": {
+      "main": [
+        [
+          {
+            "node": "Execute: Phase 4 Transform",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+           {
+            "node": "Wait: Exponential Backoff",
+            "type": "main",
+            "index": 1
+           }
+        ]
+      ]
+    },
+    "Wait: Exponential Backoff": {
+      "main": [
+        [
+          {
+            "node": "Code: Proxy Rotator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

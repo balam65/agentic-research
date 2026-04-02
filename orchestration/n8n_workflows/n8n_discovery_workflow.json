@@ -1,0 +1,220 @@
+{
+  "name": "Phase 2: Discovery & Onboarding Sub-workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowId": "master-orchestration",
+        "mode": "each"
+      },
+      "id": "trigger-phase-2",
+      "name": "Sub-workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "source_registry",
+        "where": {
+          "domain_name": "={{ $node[\"Sub-workflow Trigger\"].json[\"domain_name\"] }}"
+        }
+      },
+      "id": "check-registry",
+      "name": "Postgres: Library Check",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+        "parameters": {
+          "conditions": {
+            "boolean": [
+              {
+                "value1": "={{ $node[\"Postgres: Library Check\"].json[\"is_known\"] }}",
+                "value2": true
+              }
+            ]
+          }
+        },
+        "id": "fast-track-if",
+        "name": "If: Fast-track?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 1,
+        "position": [
+          800,
+          300
+        ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Mapped URLs for domain {{ $node[\"Sub-workflow Trigger\"].json[\"domain_name\"] }} from the research brief: {{ $json.brief }}. Discover all deep links and output the discovery_map.",
+        "options": {}
+      },
+      "id": "discovery-agent",
+      "name": "AI Agent: Discovery",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.2,
+      "position": [
+        1000,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Evaluate feasibility for discovery map: {{ $json.discovery_map }}. Check connectivity and assign an evasion_profile.",
+        "options": {}
+      },
+      "id": "sme-agent",
+      "name": "AI Agent: SME/Onboarding",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Generate CSS selectors for the target HTML of URLs in discovery_map: {{ $json.discovery_map }}. Assign version numbers and save to the scripts table.",
+        "options": {}
+      },
+      "id": "scripting-agent",
+      "name": "AI Agent: Scripting",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.2,
+      "position": [
+        1400,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "table": "source_registry",
+        "columns": [
+            "domain_name",
+            "is_known",
+            "complexity_score",
+            "evasion_config",
+            "css_selectors",
+            "version_number"
+        ]
+      },
+      "id": "postgres-upsert",
+      "name": "Postgres: Update Registry",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        300
+      ]
+    },
+    {
+        "parameters": {
+          "workflowId": "phase-3-production",
+          "mode": "each"
+        },
+        "id": "production-trigger",
+        "name": "Execute: Phase 3 Production",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1,
+        "position": [
+          1800,
+          300
+        ]
+    }
+  ],
+  "connections": {
+    "Sub-workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Library Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres: Library Check": {
+      "main": [
+        [
+          {
+            "node": "If: Fast-track?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Fast-track?": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Update Registry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent: Discovery",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "AI Agent: Discovery": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: SME/Onboarding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: SME/Onboarding": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Scripting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: Scripting": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Update Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres: Update Registry": {
+      "main": [
+        [
+          {
+            "node": "Execute: Phase 3 Production",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

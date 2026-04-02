@@ -1,0 +1,300 @@
+{
+  "name": "Phase 5: Delivery, Support & Monitoring",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowId": "transformation-subworkflow",
+        "mode": "each"
+      },
+      "id": "trigger-phase-5",
+      "name": "Sub-workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Load export_packager.js contents\nconst package = require('./utils/export_packager.js');\nreturn package(items);"
+      },
+      "id": "export-packager",
+      "name": "Code: Export Packager",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $node[\"Sub-workflow Trigger\"].json[\"delivery_method\"] }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "SFTP",
+              "output": 0
+            },
+            {
+              "value2": "S3",
+              "output": 1
+            },
+            {
+              "value2": "API",
+              "output": 2
+            }
+          ]
+        }
+      },
+      "id": "delivery-router",
+      "name": "Switch: Delivery Method",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+        "parameters": {
+          "operation": "upload",
+          "path": "/client-drop/{{ $json.job_id }}.zip"
+        },
+        "id": "sftp-delivery",
+        "name": "SFTP: Final Upload",
+        "type": "n8n-nodes-base.sftp",
+        "typeVersion": 1,
+        "position": [
+          1000,
+          100
+        ]
+    },
+    {
+        "parameters": {
+          "operation": "upload",
+          "bucket": "delivery-staging",
+          "path": "={{ $json.job_id }}.zip"
+        },
+        "id": "s3-delivery",
+        "name": "S3: Cloud Drop",
+        "type": "n8n-nodes-base.s3",
+        "typeVersion": 1,
+        "position": [
+          1000,
+          300
+        ]
+    },
+    {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $node[\"Sub-workflow Trigger\"].json[\"callback_url\"] }}",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "job_id",
+                "value": "={{ $json.job_id }}"
+              }
+            ]
+          }
+        },
+        "id": "api-delivery",
+        "name": "HTTP: API Push",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          1000,
+          500
+        ]
+    },
+    {
+        "parameters": {
+          "operation": "update",
+          "table": "job_runs",
+          "where": {
+            "job_id": "={{ $node[\"Sub-workflow Trigger\"].json[\"job_id\"] }}"
+          },
+          "columns": [
+            "current_status"
+          ]
+        },
+        "id": "status-complete",
+        "name": "Postgres: Mark COMPLETED",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 1,
+        "position": [
+          1250,
+          300
+        ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "sentinel-trigger",
+      "name": "Schedule: Sentinel Checker",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "execute",
+        "query": "SELECT job_id FROM job_runs WHERE current_status != 'COMPLETED' AND current_status != 'FAILED' AND last_updated < NOW() - INTERVAL '1 hour';"
+      },
+      "id": "sentinel-query",
+      "name": "Postgres: SLA Check",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        150
+      ]
+    },
+    {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "support-inquiry"
+        },
+        "id": "support-trigger",
+        "name": "Webhook: Support Link",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          1500,
+          450
+        ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Categorize and resolve the lookup inquiry: {{ $json.body }}. Return job status if it's a Check, escalate to JIRA if it's a Quality Dispute.",
+        "options": {}
+      },
+      "id": "support-agent",
+      "name": "AI Agent: Support Assistant",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.2,
+      "position": [
+        1700,
+        450
+      ]
+    }
+  ],
+  "connections": {
+    "Sub-workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code: Export Packager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Export Packager": {
+      "main": [
+        [
+          {
+            "node": "Switch: Delivery Method",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Delivery Method": {
+      "main": [
+        [
+          {
+            "node": "SFTP: Final Upload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "S3: Cloud Drop",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "HTTP: API Push",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "SFTP: Final Upload": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Mark COMPLETED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "S3: Cloud Drop": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Mark COMPLETED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: API Push": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Mark COMPLETED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule: Sentinel Checker": {
+      "main": [
+        [
+          {
+            "node": "Postgres: SLA Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Support Link": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Support Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

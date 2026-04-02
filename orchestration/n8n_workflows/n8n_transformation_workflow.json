@@ -1,0 +1,174 @@
+{
+  "name": "Phase 4: Transformation & Validation",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowId": "production-subworkflow",
+        "mode": "each"
+      },
+      "id": "trigger-phase-4",
+      "name": "Sub-workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Load data_normalizer.js contents\nconst normalize = require('./utils/data_normalizer.js');\nreturn normalize(items);"
+      },
+      "id": "schema-normalizer",
+      "name": "Code: Schema Normalizer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Grade the following record on a confidence scale (0.0 to 1.0): {{ $json }}. Check for negative price, arrival < departure date, and cross-reference multiple sources if present.",
+        "options": {}
+      },
+      "id": "qa-agent",
+      "name": "AI Agent: QA & Validation",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.2,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+        "parameters": {
+          "conditions": {
+            "boolean": [
+              {
+                "value1": "={{ $node[\"AI Agent: QA & Validation\"].json[\"quality_score\"] >= 0.8 }}",
+                "value2": true
+              }
+            ]
+          }
+        },
+        "id": "quality-check",
+        "name": "If: High Quality?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 1,
+        "position": [
+          1050,
+          300
+        ]
+    },
+    {
+        "parameters": {
+          "operation": "to_csv",
+          "options": {
+            "header": true
+          }
+        },
+        "id": "csv-converter",
+        "name": "Code: Format to CSV",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 1,
+        "position": [
+          1250,
+          200
+        ]
+    },
+    {
+        "parameters": {
+          "chatId": "qa-review-channel",
+          "text": "=Low quality detected for job {{ $node[\"Sub-workflow Trigger\"].json[\"job_id\"] }}. Score: {{ $node[\"AI Agent: QA & Validation\"].json[\"quality_score\"] }}. Human-in-the-loop (HITL) review required."
+        },
+        "id": "slack-hitl",
+        "name": "Slack: Flag for Review",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 1,
+        "position": [
+          1250,
+          450
+        ]
+    },
+    {
+        "parameters": {
+          "workflowId": "phase-5-delivery",
+          "mode": "each"
+        },
+        "id": "delivery-trigger",
+        "name": "Execute: Phase 5 Delivery",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1,
+        "position": [
+          1500,
+          300
+        ]
+    }
+  ],
+  "connections": {
+    "Sub-workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code: Schema Normalizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Schema Normalizer": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: QA & Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: QA & Validation": {
+      "main": [
+        [
+          {
+            "node": "If: High Quality?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: High Quality?": {
+      "main": [
+        [
+          {
+            "node": "Code: Format to CSV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack: Flag for Review",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code: Format to CSV": {
+      "main": [
+        [
+          {
+            "node": "Execute: Phase 5 Delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
