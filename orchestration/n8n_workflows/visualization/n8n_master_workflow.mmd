@@ -1,0 +1,20 @@
+graph TD
+  webhook["Webhook: Ingestion (POST)"] --> assessment["AI Agent: Assessment"]
+  assessment --> postgres_create["Postgres: Create Job"]
+  postgres_create --> confidence_check{"If: Confidence High? (>0.7)"}
+  
+  confidence_check -- True --> discovery["Execute: Phase 2 Discovery"]
+  confidence_check -- False --> slack_alert["Slack: HITL Alert"]
+
+  classDef trigger fill:#00ff00,stroke:#333,color:#000;
+  classDef agent fill:#0000ff,stroke:#333,color:#fff;
+  classDef storage fill:#00ff00,stroke:#333,color:#000;
+  classDef logic fill:#ff0000,stroke:#333,color:#fff;
+  classDef alert fill:#ffff00,stroke:#333,color:#000;
+
+  class webhook trigger;
+  class assessment agent;
+  class postgres_create storage;
+  class confidence_check logic;
+  class slack_alert alert;
+  class discovery trigger;

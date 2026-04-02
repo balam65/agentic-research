@@ -1,0 +1,31 @@
+graph TD
+  trigger["Execute Workflow Trigger"] --> proxy["Code: Proxy Rotator"]
+  proxy --> router{"Switch: Source Type"}
+  
+  router -- "Rule 0 (Static HTML)" --> httpRequest["HTTP: Static Extractions"]
+  router -- "Rule 1 (SPA)" --> browser["Browser: Playwright Node"]
+  
+  httpRequest --> map_results["AI Agent: Map Results"]
+  browser --> map_results
+  
+  map_results --> success_check{"If: Strike Check? (Success?)"}
+  success_check -- "True (Success)" --> transform_trigger["Execute: Phase 4 Transform"]
+  success_check -- "False (Retry)" --> wait["Wait: Exponential Backoff"]
+  
+  wait --> proxy
+
+  classDef trigger fill:#00ff00,stroke:#333,color:#000;
+  classDef agent fill:#0000ff,stroke:#333,color:#fff;
+  classDef storage fill:#00ff00,stroke:#333,color:#000;
+  classDef logic fill:#ff0000,stroke:#333,color:#fff;
+  classDef util fill:#888,stroke:#333,color:#fff;
+
+  class trigger trigger;
+  class proxy util;
+  class httpRequest util;
+  class router logic;
+  class browser util;
+  class map_results agent;
+  class success_check logic;
+  class wait util;
+  class transform_trigger trigger;

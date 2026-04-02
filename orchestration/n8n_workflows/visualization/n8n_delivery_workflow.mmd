@@ -1,0 +1,36 @@
+graph TD
+  subgraph DeliveryPipeline ["Phase 5: Delivery & Monitoring"]
+    trigger["Sub-workflow Trigger"] --> packager["Code: Export Packager"]
+    packager --> router{"Switch: Delivery Method"}
+    
+    router -- "Output 0 (SFTP)" --> sftp["SFTP: Final Upload"]
+    router -- "Output 1 (S3)" --> s3["S3: Cloud Drop"]
+    router -- "Output 2 (API)" --> api["HTTP: API Push"]
+    
+    sftp --> mark_complete["Postgres: Mark COMPLETED"]
+    s3 --> mark_complete
+    api --> mark_complete
+  end
+
+  subgraph SentinelMonitoring ["Sentinel & Operations"]
+    sentinel_trigger["Schedule: Sentinel Checker"] --> sla_check["Postgres: SLA Check"]
+    support_trigger["Webhook: Support Link"] --> support_agent["AI Agent: Support Assistant"]
+  end
+
+  classDef trigger fill:#00ff00,stroke:#333,color:#000;
+  classDef agent fill:#0000ff,stroke:#333,color:#fff;
+  classDef storage fill:#00ff00,stroke:#333,color:#000;
+  classDef logic fill:#ff0000,stroke:#333,color:#fff;
+  classDef util fill:#888,stroke:#333,color:#fff;
+
+  class trigger trigger;
+  class packager util;
+  class router logic;
+  class sftp util;
+  class s3 util;
+  class api util;
+  class mark_complete storage;
+  class sentinel_trigger trigger;
+  class sla_check storage;
+  class support_trigger trigger;
+  class support_agent agent;

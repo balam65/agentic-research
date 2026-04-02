@@ -1,0 +1,23 @@
+graph TD
+  trigger["Sub-workflow Trigger"] --> normalizer["Code: Schema Normalizer"]
+  normalizer --> qa_agent["AI Agent: QA & Validation"]
+  
+  qa_agent --> quality_check{"If: High Quality? (score >= 0.8)"}
+  quality_check -- "True (Pass)" --> csv_converter["Code: Format to CSV"]
+  quality_check -- "False (Flag)" --> slack_hitl["Slack: Flag for Review"]
+  
+  csv_converter --> delivery_trigger["Execute: Phase 5 Delivery"]
+
+  classDef trigger fill:#00ff00,stroke:#333,color:#000;
+  classDef agent fill:#0000ff,stroke:#333,color:#fff;
+  classDef storage fill:#00ff00,stroke:#333,color:#000;
+  classDef logic fill:#ff0000,stroke:#333,color:#fff;
+  classDef alert fill:#ffff00,stroke:#333,color:#000;
+
+  class trigger trigger;
+  class normalizer util;
+  class qa_agent agent;
+  class quality_check logic;
+  class slack_hitl alert;
+  class csv_converter util;
+  class delivery_trigger trigger;

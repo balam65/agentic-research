@@ -1,0 +1,26 @@
+graph TD
+  trigger["Sub-workflow Trigger"] --> library_check["Postgres: Library Check"]
+  library_check --> is_known{"If: Fast-track? (is_known = true)"}
+  
+  is_known -- "True (Update Registry)" --> update_registry["Postgres: Update Registry"]
+  is_known -- "False (Run Discovery)" --> discovery_agent["AI Agent: Discovery"]
+  
+  discovery_agent --> sme_agent["AI Agent: SME/Onboarding"]
+  sme_agent --> scripting_agent["AI Agent: Scripting"]
+  scripting_agent --> update_registry
+  
+  update_registry --> production_trigger["Execute: Phase 3 Production"]
+
+  classDef trigger fill:#00ff00,stroke:#333,color:#000;
+  classDef agent fill:#0000ff,stroke:#333,color:#fff;
+  classDef storage fill:#00ff00,stroke:#333,color:#000;
+  classDef logic fill:#ff0000,stroke:#333,color:#fff;
+
+  class trigger trigger;
+  class library_check storage;
+  class is_known logic;
+  class discovery_agent agent;
+  class sme_agent agent;
+  class scripting_agent agent;
+  class update_registry storage;
+  class production_trigger trigger;
