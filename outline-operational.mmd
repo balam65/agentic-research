@@ -1,81 +1,65 @@
 %%{init: {'themeVariables': { 'lineColor': '#ffffff' }}}%%
-flowchart TD
-    %% ── Triggers ──
+flowchart LR
+
+    %% ── TRIGGER ──
     Client[🎯 Client Request<br>Chat / PDF / API / Brief]
-    BreakTrigger[⚠️ Script Break Detected<br>Source Change / Barrier / Requirement Change]
 
-    %% ── SETUP PATH  (runs infrequently) ──
-    Client --> Governance
-    BreakTrigger -.-> P2
-
-    subgraph SetupPath ["🔧 Setup Path — Runs Once / On Break"]
+    %% ── SETUP PATH (left side, top-down) ──
+    subgraph SETUP ["🔧 SETUP PATH — Runs Once / On Break"]
         direction TB
+        Master[Master Agent<br>Orchestration & State]
+        Comp[Compliance Agent<br>Security & PII Rules]
+        Assess[Assessment Agent<br>Intent → Research Brief]
+        Sched[Scheduling Agent<br>SLA & Queue]
+        Disc[Discovery Agent<br>Deep Links & APIs]
+        SME[SME Agent<br>Feasibility & Evasion]
+        Script[Scripting Agent<br>Selectors & Versioning]
 
-        subgraph Governance ["Phase 0: Governance & Control"]
-            Master[Master Agent<br>Orchestration & State]
-            Comp[Compliance Agent<br>Security & PII Rules]
-        end
-
-        subgraph P1 ["Phase 1: Intake"]
-            Assess[Assessment Agent<br>Intent → Research Brief]
-            Sched[Scheduling Agent<br>SLA & Queue]
-        end
-
-        subgraph P2 ["Phase 2: Research & Onboarding"]
-            Disc[Discovery Agent<br>Deep Links & APIs]
-            SME[SME Agent<br>Feasibility & Evasion]
-            Script[Scripting Agent<br>Selectors & Versioning]
-        end
-
-        Governance --> P1
-        P1 --> P2
+        Master --> Comp
+        Comp --> Assess
+        Assess --> Sched
+        Sched --> Disc
+        Disc --> SME
+        SME --> Script
     end
 
-    %% Hand-off from setup to production
-    P2 -- "✅ Script Ready" --> P3
-
-    %% ── PRODUCTION LOOP  (runs continuously) ──
-    subgraph ProdLoop ["🔄 Production Loop — Runs Continuously"]
+    %% ── PRODUCTION LOOP (right side, cycles) ──
+    subgraph LOOP ["🔄 PRODUCTION LOOP — Runs Continuously"]
         direction TB
+        Extr[Extraction Agent<br>Browser / HTTP / PDF]
+        Scale[Production Agent<br>Proxies + Auto-Scale]
+        Trans[Transformation Agent<br>Schema Normalization]
+        QA[QA Agent<br>Confidence Scoring]
+        Deliv[Delivery Agent<br>SFTP / S3 / API]
+        Sent[Sentinel Agent<br>SLA & Alerts]
+        Supp[Support Agent<br>Client Queries]
 
-        subgraph P3 ["Phase 3: Production"]
-            Extr[Extraction Agent<br>Browser / HTTP / PDF]
-            Scale[Production Agent<br>Proxies + Auto-Scale]
-        end
-
-        subgraph P4 ["Phase 4: Quality Gate"]
-            Trans[Transformation Agent<br>Schema Normalization]
-            QA[QA Agent<br>Confidence Scoring]
-        end
-
-        subgraph P5 ["Phase 5: Delivery & Monitoring"]
-            Deliv[Delivery Agent<br>SFTP / S3 / API]
-            Sent[Sentinel Agent<br>SLA & Alerts]
-            Supp[Support Agent<br>Client Queries]
-        end
-
-        P3 --> P4
-        P4 --> P5
+        Extr --> Scale
+        Scale --> Trans
+        Trans --> QA
+        QA --> Deliv
+        Deliv --> Sent
+        Sent --> Supp
     end
 
-    %% Continuous cycle back
-    P5 -- "🔄 Next Scheduled Run" --> P3
+    %% ── CONNECTIONS ──
+    Client --> Master
+    Script -- "✅ Script Ready" --> Extr
+    Supp -- "🔄 Next Run" --> Extr
 
-    %% Output
-    P5 --> Output[🚀 Secure Delivered Dataset]
+    %% ── REPAIR FEEDBACK ──
+    Sent -. "🚨 Break / Drift" .-> Disc
 
-    %% Sentinel detects breakage → feeds back to setup
-    Sent -. "🚨 Breakage / Drift" .-> BreakTrigger
+    %% ── OUTPUT ──
+    Deliv --> Output[🚀 Secure Delivered Dataset]
 
-    %% ── Styling (same palette) ──
+    %% ── STYLING ──
     classDef done fill:#22c55e,stroke:#166534,color:#fff,stroke-width:2px
     classDef progress fill:#eab308,stroke:#854d0e,color:#000,stroke-width:2px
     classDef gov fill:#64748b,stroke:#1e2937,color:#fff
-    classDef trigger fill:#ef4444,stroke:#991b1b,color:#fff,stroke-width:2px
-    classDef setupBox fill:#1e293b,stroke:#64748b,color:#fff,stroke-width:2px
-    classDef loopBox fill:#14532d,stroke:#22c55e,color:#fff,stroke-width:2px
+    classDef output fill:#8b5cf6,stroke:#5b21b6,color:#fff,stroke-width:2px
 
     class Master,Comp gov
     class Assess,Sched,Disc,SME,Script,Trans,QA,Deliv,Sent,Supp done
     class Extr,Scale progress
-    class BreakTrigger trigger
+    class Output output
