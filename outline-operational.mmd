@@ -1,57 +1,43 @@
 %%{init: {'themeVariables': { 'lineColor': '#ffffff' }}}%%
-flowchart LR
-
+flowchart TD
     %% ── TRIGGER ──
     Client[🎯 Client Request<br>Chat / PDF / API / Brief]
 
-    %% ── SETUP PATH (left side, top-down) ──
-    subgraph SETUP ["🔧 SETUP PATH — Runs Once / On Break"]
-        direction TB
-        Master[Master Agent<br>Orchestration & State]
-        Comp[Compliance Agent<br>Security & PII Rules]
-        Assess[Assessment Agent<br>Intent → Research Brief]
-        Sched[Scheduling Agent<br>SLA & Queue]
-        Disc[Discovery Agent<br>Deep Links & APIs]
-        SME[SME Agent<br>Feasibility & Evasion]
-        Script[Scripting Agent<br>Selectors & Versioning]
-
-        Master --> Comp
-        Comp --> Assess
-        Assess --> Sched
-        Sched --> Disc
-        Disc --> SME
-        SME --> Script
-    end
-
-    %% ── PRODUCTION LOOP (right side, cycles) ──
-    subgraph LOOP ["🔄 PRODUCTION LOOP — Runs Continuously"]
-        direction TB
-        Extr[Extraction Agent<br>Browser / HTTP / PDF]
-        Scale[Production Agent<br>Proxies + Auto-Scale]
-        Trans[Transformation Agent<br>Schema Normalization]
-        QA[QA Agent<br>Confidence Scoring]
-        Deliv[Delivery Agent<br>SFTP / S3 / API]
-        Sent[Sentinel Agent<br>SLA & Alerts]
-        Supp[Support Agent<br>Client Queries]
-
-        Extr --> Scale
-        Scale --> Trans
-        Trans --> QA
-        QA --> Deliv
-        Deliv --> Sent
-        Sent --> Supp
-    end
-
-    %% ── CONNECTIONS ──
+    %% ── SETUP PATH ──
     Client --> Master
-    Script -- "✅ Script Ready" --> Extr
-    Supp -- "🔄 Next Run" --> Extr
 
-    %% ── REPAIR FEEDBACK ──
-    Sent -. "🚨 Break / Drift" .-> Disc
+    subgraph SETUP ["🔧 SETUP PATH — Runs Once / On Break"]
+        Master[Master Agent<br>Orchestration & State]
+        --> Comp[Compliance Agent<br>Security & PII Rules]
+        --> Assess[Assessment Agent<br>Intent → Research Brief]
+        --> Sched[Scheduling Agent<br>SLA & Queue]
+        --> Disc[Discovery Agent<br>Deep Links & APIs]
+        --> SME[SME Agent<br>Feasibility & Evasion]
+        --> Script[Scripting Agent<br>Selectors & Versioning]
+    end
+
+    %% ── HANDOFF ──
+    Script -- "✅ Script Ready" --> Extr
+
+    %% ── PRODUCTION LOOP ──
+    subgraph LOOP ["🔄 PRODUCTION LOOP — Runs Continuously"]
+        Extr[Extraction Agent<br>Browser / HTTP / PDF]
+        --> Scale[Production Agent<br>Proxies + Auto-Scale]
+        --> Trans[Transformation Agent<br>Schema Normalization]
+        --> QA[QA Agent<br>Confidence Scoring]
+        --> Deliv[Delivery Agent<br>SFTP / S3 / API]
+        --> Sent[Sentinel Agent<br>SLA & Alerts]
+        --> Supp[Support Agent<br>Client Queries]
+    end
 
     %% ── OUTPUT ──
     Deliv --> Output[🚀 Secure Delivered Dataset]
+
+    %% ── LOOP BACK ──
+    Supp -- "🔄 Next Scheduled Run" --> Extr
+
+    %% ── BREAK / DRIFT REPAIR ──
+    Sent -. "🚨 Break / Drift → Re-enter Setup" .-> Disc
 
     %% ── STYLING ──
     classDef done fill:#22c55e,stroke:#166534,color:#fff,stroke-width:2px
