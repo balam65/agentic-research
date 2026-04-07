@@ -1,0 +1,73 @@
+%%{init: {'themeVariables': { 'lineColor': '#ffffff' }}}%%
+flowchart TD
+    %% ── TRIGGER ──
+    Client[🎯 Client Request<br>Chat / PDF / API / Brief]
+
+    %% ── SETUP PATH ──
+    Client --> Master
+
+    subgraph SETUP ["🔧 SETUP PATH — Runs Once / On Break or Drift"]
+        Master[Master Agent<br>Orchestration & State]
+        --> Comp[Compliance Agent<br>Security & PII Rules]
+        --> Assess[Assessment Agent<br>Intent → Research Brief]
+        --> Sched[Scheduling Agent<br>SLA & Queue]
+
+        %% ── BRANCH 1: Script Availability Check ──
+        Sched --> ScriptCheck{📋 Pre-existing<br>Script Available?}
+        ScriptCheck -- "✅ Yes — Reuse Script" --> ScriptSelect[Script Selector<br>Match & Version Check]
+        ScriptCheck -- "❌ No — Build New" --> Disc[Discovery Agent<br>Deep Links & APIs]
+        --> SME[SME Agent<br>Feasibility & Evasion]
+        --> Script[Scripting Agent<br>Selectors & Versioning]
+    end
+
+    %% ── HANDOFF ──
+    Script -- "✅ Script Ready" --> Extr
+    ScriptSelect -- "✅ Existing Script Loaded" --> Extr
+
+    %% ── PRODUCTION LOOP ──
+    subgraph LOOP ["🔄 PRODUCTION LOOP — Runs Continuously"]
+        Extr[Extraction Agent<br>Browser / HTTP / PDF]
+        --> Scale[Production Agent<br>Proxies + Auto-Scale]
+        --> Trans[Transformation Agent<br>Schema Normalization]
+        --> QA[QA Agent<br>Confidence Scoring]
+
+        %% Delivery row — horizontal alignment via LR subgraph
+        subgraph DELIVER [" "]
+            direction LR
+            Deliv[Delivery Agent<br>SFTP / S3 / API] --> Output[🚀 Secure Delivered Dataset]
+        end
+
+        QA --> Deliv
+        Deliv --> Sent[Sentinel Agent<br>SLA & Alerts]
+        --> Supp[Support Agent<br>Client Queries]
+
+        %% Drift flag stays inside Loop box
+        Sent -. "📉 Drift Detected" .-> Drift[📉 Re-orchestrate Pipeline]
+    end
+
+    %% ── LOOP BACK ──
+    Supp -- "🔄 Next Scheduled Run" --> Extr
+
+    %% ── BRANCH 2: Break vs Drift Repair ──
+    Sent -. "🚨 Break → Re-discover Source" .-> Disc
+    Drift -. "↩ Return to Master" .-> Master
+
+    %% ── STYLING ──
+    classDef done fill:#22c55e,stroke:#166534,color:#fff,stroke-width:2px
+    classDef progress fill:#eab308,stroke:#854d0e,color:#000,stroke-width:2px
+    classDef gov fill:#64748b,stroke:#1e2937,color:#fff
+    classDef output fill:#8b5cf6,stroke:#5b21b6,color:#fff,stroke-width:2px
+    classDef decision fill:#f97316,stroke:#c2410c,color:#fff,stroke-width:2px
+    classDef reuse fill:#06b6d4,stroke:#0e7490,color:#fff,stroke-width:2px
+    classDef drift fill:#ef4444,stroke:#b91c1c,color:#fff,stroke-width:2px
+
+    class Master,Comp gov
+    class Assess,Sched,Disc,SME,Script,Trans,QA,Deliv,Sent,Supp done
+    class Extr,Scale progress
+    class Output output
+    class ScriptCheck decision
+    class ScriptSelect reuse
+    class Drift drift
+
+    %% Hide the DELIVER subgraph border so it looks seamless
+    style DELIVER fill:none,stroke:none
