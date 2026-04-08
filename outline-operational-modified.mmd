@@ -21,13 +21,13 @@ flowchart TD
     end
 
     %% ── HANDOFF ──
-    Script -- "✅ Script Ready" --> Extr
-    ScriptSelect -- "✅ Existing Script Loaded" --> Extr
+    Script -- "✅ Script Ready" --> Scale
+    ScriptSelect -- "✅ Existing Script Loaded" --> Scale
 
     %% ── PRODUCTION LOOP ──
     subgraph LOOP ["🔄 PRODUCTION LOOP — Runs Continuously"]
-        Extr[Extraction Agent<br>Browser / HTTP / PDF]
-        --> Scale[Production Agent<br>Proxies + Auto-Scale]
+        Scale[Production Agent<br>Proxies + Auto-Scale]
+        --> Extr[Extraction Agent<br>Browser / HTTP / PDF]
         --> Trans[Transformation Agent<br>Schema Normalization]
         --> QA[QA Agent<br>Confidence Scoring]
 
@@ -46,11 +46,11 @@ flowchart TD
     end
 
     %% ── LOOP BACK ──
-    Supp -- "🔄 Next Scheduled Run" --> Extr
+    Supp -- "🔄 Next Scheduled Run" --> Scale
 
     %% ── BRANCH 2: Break vs Drift Repair ──
-    Sent -. "🚨 Break → Re-discover Source" .-> Disc
-    Drift -. "↩ Return to Master" .-> Master
+    Extr -. "🚨 Break (Retries Exhausted)" .-> Disc
+    Drift -. "↩ Return to Scheduling" .-> Sched
 
     %% ── STYLING ──
     classDef done fill:#22c55e,stroke:#166534,color:#fff,stroke-width:2px

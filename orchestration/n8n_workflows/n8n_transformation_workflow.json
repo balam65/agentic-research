@@ -3,13 +3,12 @@
   "nodes": [
     {
       "parameters": {
-        "workflowId": "production-subworkflow",
-        "mode": "each"
+        "inputSource": "passthrough"
       },
-      "id": "trigger-phase-4",
-      "name": "Sub-workflow Trigger",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "id": "subworkflow-trigger",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
       "position": [
         400,
         300
@@ -24,13 +23,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        600,
+        640,
         300
       ]
     },
     {
       "parameters": {
-        "prompt": "=Grade the following record on a confidence scale (0.0 to 1.0): {{ $json }}. Check for negative price, arrival < departure date, and cross-reference multiple sources if present.",
+        "prompt": "=Grade the following normalized record on a confidence scale from 0.0 to 1.0 and return quality_score plus QA notes: {{ $json }}.",
         "options": {}
       },
       "id": "qa-agent",
@@ -38,77 +37,74 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.2,
       "position": [
-        850,
+        900,
         300
       ]
     },
     {
-        "parameters": {
-          "conditions": {
-            "boolean": [
-              {
-                "value1": "={{ $node[\"AI Agent: QA & Validation\"].json[\"quality_score\"] >= 0.8 }}",
-                "value2": true
-              }
-            ]
-          }
-        },
-        "id": "quality-check",
-        "name": "If: High Quality?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 1,
-        "position": [
-          1050,
-          300
-        ]
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $node[\"AI Agent: QA & Validation\"].json[\"quality_score\"] >= 0.8 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "quality-gate",
+      "name": "If: High Quality?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1160,
+        300
+      ]
     },
     {
-        "parameters": {
-          "operation": "to_csv",
-          "options": {
-            "header": true
-          }
-        },
-        "id": "csv-converter",
-        "name": "Code: Format to CSV",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 1,
-        "position": [
-          1250,
-          200
-        ]
+      "parameters": {
+        "jsCode": "const rows = items.map((item) => item.json);\nif (!rows.length) {\n  return [{ json: { csv: '' } }];\n}\nconst headers = [...new Set(rows.flatMap((row) => Object.keys(row)))];\nconst escapeCell = (value) => {\n  const normalized = value === null || value === undefined ? '' : String(value);\n  return /[\",\\n]/.test(normalized) ? `\"${normalized.replace(/\"/g, '\"\"')}\"` : normalized;\n};\nconst csv = [\n  headers.join(','),\n  ...rows.map((row) => headers.map((header) => escapeCell(row[header])).join(','))\n].join('\\n');\nreturn [{ json: { ...rows[0], csv } }];"
+      },
+      "id": "format-to-csv",
+      "name": "Code: Format to CSV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1420,
+        180
+      ]
     },
     {
-        "parameters": {
-          "chatId": "qa-review-channel",
-          "text": "=Low quality detected for job {{ $node[\"Sub-workflow Trigger\"].json[\"job_id\"] }}. Score: {{ $node[\"AI Agent: QA & Validation\"].json[\"quality_score\"] }}. Human-in-the-loop (HITL) review required."
-        },
-        "id": "slack-hitl",
-        "name": "Slack: Flag for Review",
-        "type": "n8n-nodes-base.slack",
-        "typeVersion": 1,
-        "position": [
-          1250,
-          450
-        ]
+      "parameters": {
+        "chatId": "qa-review-channel",
+        "text": "=Low quality detected for job {{ $node[\"When Executed by Another Workflow\"].json[\"job_id\"] }}. Score: {{ $node[\"AI Agent: QA & Validation\"].json[\"quality_score\"] }}. Human review required."
+      },
+      "id": "qa-slack-alert",
+      "name": "Slack: Flag for Review",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        1420,
+        440
+      ]
     },
     {
-        "parameters": {
-          "workflowId": "phase-5-delivery",
-          "mode": "each"
-        },
-        "id": "delivery-trigger",
-        "name": "Execute: Phase 5 Delivery",
-        "type": "n8n-nodes-base.executeWorkflow",
-        "typeVersion": 1,
-        "position": [
-          1500,
-          300
-        ]
+      "parameters": {
+        "workflowId": "phase-5-delivery",
+        "mode": "each"
+      },
+      "id": "delivery-trigger",
+      "name": "Execute: Phase 5 Delivery",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        180
+      ]
     }
   ],
   "connections": {
-    "Sub-workflow Trigger": {
+    "When Executed by Another Workflow": {
       "main": [
         [
           {
@@ -154,7 +150,7 @@
           {
             "node": "Slack: Flag for Review",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ]
       ]
