@@ -1,0 +1,93 @@
+# Project File List
+
+## Core Project Files
+- [README.md](README.md)
+
+## Documentation (docs/)
+### Analysis
+- [docs/analysis/00-analysis-framework-overview.md](docs/analysis/00-analysis-framework-overview.md)
+- [docs/analysis/01-requirement-assessment-analysis.md](docs/analysis/01-requirement-assessment-analysis.md)
+- [docs/analysis/02-source-discovery-analysis.md](docs/analysis/02-source-discovery-analysis.md)
+- [docs/analysis/03-extraction-complexity-analysis.md](docs/analysis/03-extraction-complexity-analysis.md)
+- [docs/analysis/04-production-scaling-analysis.md](docs/analysis/04-production-scaling-analysis.md)
+- [docs/analysis/05-transformation-qa-analysis.md](docs/analysis/05-transformation-qa-analysis.md)
+- [docs/analysis/06-compliance-delivery-analysis.md](docs/analysis/06-compliance-delivery-analysis.md)
+- [docs/analysis/07-operational-readiness-assessment.md](docs/analysis/07-operational-readiness-assessment.md)
+- [docs/analysis/08-research-onboarding-bridge.md](docs/analysis/08-research-onboarding-bridge.md)
+- [docs/analysis/09-autonomous-research-execution-playbook.md](docs/analysis/09-autonomous-research-execution-playbook.md)
+
+### Diagrams
+- [docs/diagrams/README.md](docs/diagrams/README.md)
+- [docs/diagrams/agentic-research-architecture.mmd](docs/diagrams/agentic-research-architecture.mmd)
+- [docs/diagrams/assessment-discovery-handoff.mmd](docs/diagrams/assessment-discovery-handoff.mmd)
+- [docs/diagrams/extraction-scaling-pipeline.mmd](docs/diagrams/extraction-scaling-pipeline.mmd)
+- [docs/diagrams/registry.json](docs/diagrams/registry.json)
+- [docs/diagrams/research-orchestration-flow.mmd](docs/diagrams/research-orchestration-flow.mmd)
+
+### Implementation
+- [docs/implementation/00-master-plan.md](docs/implementation/00-master-plan.md)
+- [docs/implementation/01-master-orchestration.md](docs/implementation/01-master-orchestration.md)
+- [docs/implementation/02-compliance-security.md](docs/implementation/02-compliance-security.md)
+- [docs/implementation/03-assessment-interrogation.md](docs/implementation/03-assessment-interrogation.md)
+- [docs/implementation/04-scheduling-triggering.md](docs/implementation/04-scheduling-triggering.md)
+- [docs/implementation/05-source-discovery.md](docs/implementation/05-source-discovery.md)
+- [docs/implementation/06-onboarding-sme.md](docs/implementation/06-onboarding-sme.md)
+- [docs/implementation/07-scripting-repository.md](docs/implementation/07-scripting-repository.md)
+- [docs/implementation/08-extraction-orchestration.md](docs/implementation/08-extraction-orchestration.md)
+- [docs/implementation/09-production-scaling.md](docs/implementation/09-production-scaling.md)
+- [docs/implementation/10-transformation-mapping.md](docs/implementation/10-transformation-mapping.md)
+- [docs/implementation/11-qa-validation.md](docs/implementation/11-qa-validation.md)
+- [docs/implementation/12-delivery-pipelines.md](docs/implementation/12-delivery-pipelines.md)
+- [docs/implementation/13-sentinel-monitoring.md](docs/implementation/13-sentinel-monitoring.md)
+- [docs/implementation/14-system-support.md](docs/implementation/14-system-support.md)
+
+## Orchestration
+### n8n Workflows
+- [orchestration/n8n_workflows/n8n_delivery_workflow.json](orchestration/n8n_workflows/n8n_delivery_workflow.json)
+- [orchestration/n8n_workflows/n8n_discovery_workflow.json](orchestration/n8n_workflows/n8n_discovery_workflow.json)
+- [orchestration/n8n_workflows/n8n_master_workflow.json](orchestration/n8n_workflows/n8n_master_workflow.json)
+- [orchestration/n8n_workflows/n8n_production_workflow.json](orchestration/n8n_workflows/n8n_production_workflow.json)
+- [orchestration/n8n_workflows/n8n_transformation_workflow.json](orchestration/n8n_workflows/n8n_transformation_workflow.json)
+
+### Agent Prompts
+- [orchestration/prompts/01-master-agent.md](orchestration/prompts/01-master-agent.md)
+- [orchestration/prompts/02-compliance-agent.md](orchestration/prompts/02-compliance-agent.md)
+- [orchestration/prompts/03-assessment-agent.md](orchestration/prompts/03-assessment-agent.md)
+- [orchestration/prompts/04-scheduling-agent.md](orchestration/prompts/04-scheduling-agent.md)
+- [orchestration/prompts/05-discovery-agent.md](orchestration/prompts/05-discovery-agent.md)
+- [orchestration/prompts/06-sme-agent.md](orchestration/prompts/06-sme-agent.md)
+- [orchestration/prompts/07-scripting-agent.md](orchestration/prompts/07-scripting-agent.md)
+- [orchestration/prompts/08-extraction-agent.md](orchestration/prompts/08-extraction-agent.md)
+- [orchestration/prompts/09-production-agent.md](orchestration/prompts/09-production-agent.md)
+- [orchestration/prompts/10-transformation-agent.md](orchestration/prompts/10-transformation-agent.md)
+- [orchestration/prompts/11-qa-agent.md](orchestration/prompts/11-qa-agent.md)
+- [orchestration/prompts/12-delivery-agent.md](orchestration/prompts/12-delivery-agent.md)
+- [orchestration/prompts/13-sentinel-agent.md](orchestration/prompts/13-sentinel-agent.md)
+- [orchestration/prompts/14-support-agent.md](orchestration/prompts/14-support-agent.md)
+
+### Utilities
+- [orchestration/utils/data_normalizer.js](orchestration/utils/data_normalizer.js)
+- [orchestration/utils/export_packager.js](orchestration/utils/export_packager.js)
+- [orchestration/utils/proxy_handler.js](orchestration/utils/proxy_handler.js)
+- [orchestration/utils/state_management.sql](orchestration/utils/state_management.sql)
+
+## Miscellaneous (Misc/)
+- [Misc/Designing N8N Workflow Nodes.md](Misc/Designing%20N8N%20Workflow%20Nodes.md)
+- [Misc/Generating Agentic Research Analysis.md](Misc/Generating%20Agentic%20Research%20Analysis.md)
+- [Misc/Generating Agentic Research Documentation.md](Misc/Generating%20Agentic%20Research%20Documentation.md)
+- [Misc/Generating Agentic Research Flowcharts.md](Misc/Generating%20Agentic%20Research%20Flowcharts.md)
+- [Misc/Travel Production Process - Agentic Framework.pdf](Misc/Travel%20Production%20Process%20-%20Agentic%20Framework.pdf)
+- [Misc/gap_analysis.md](Misc/gap_analysis.md)
+- [Misc/gap_analysis_evaluation.md](Misc/gap_analysis_evaluation.md)
+- [Misc/implementation_plan.md](Misc/implementation_plan.md)
+- [Misc/n8n_p3_implementation_plan.md](Misc/n8n_p3_implementation_plan.md)
+- [Misc/n8n_p4_implementation_plan.md](Misc/n8n_p4_implementation_plan.md)
+- [Misc/n8n_p5_implementation_plan.md](Misc/n8n_p5_implementation_plan.md)
+- [Misc/n8n_phase2_walkthrough.md](Misc/n8n_phase2_walkthrough.md)
+- [Misc/n8n_task.md](Misc/n8n_task.md)
+- [Misc/n8n_walkthrough.md](Misc/n8n_walkthrough.md)
+- [Misc/p4_imp_walkthrough.md](Misc/p4_imp_walkthrough.md)
+- [Misc/p5_walkthrough.md](Misc/p5_walkthrough.md)
+- [Misc/walkthrough.md](Misc/walkthrough.md)
+- [Misc/walkthrough_bugfix2.md](Misc/walkthrough_bugfix2.md)
+- [Misc/walkthrough_gap_fixes.md](Misc/walkthrough_gap_fixes.md)

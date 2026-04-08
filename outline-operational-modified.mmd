@@ -1,0 +1,70 @@
+%%{init: {'themeVariables': { 'lineColor': '#ffffff' }}}%%
+flowchart TD
+    %% ── NON-NEGOTIABLE I/O CONTRACT ──
+    subgraph CONTRACT ["📜 Top-Level Contract"]
+        direction LR
+        Input[📥 Input: Target & Constraints]
+        Output[🚀 Output: Validated Extracted Data]
+    end
+
+    %% ── SURFACE AREAS ──
+    subgraph SURFACES ["💻 Surface Areas (Visibility)"]
+        Dashboard[Command Center Dashboard<br/>Live Observability & Control]
+    end
+
+    %% ── INTELLIGENCE LAYER ──
+    subgraph INTELLIGENCE ["🧠 Intelligence Layer"]
+        Orchestrator[Dynamic Event Router<br/>Assembles Capabilities]
+        HITL[HITL Policy Engine<br/>Confidence Thresholds]
+        Orchestrator <--> HITL
+    end
+
+    %% ── WORLD MODEL ──
+    subgraph WORLD_MODEL ["🌍 World Model (Shared Situational Awareness)"]
+        EventBus[(Event Store / Supabase DB<br/>Logs actions, outputs, anomalies)]
+    end
+
+    %% ── CAPABILITY REGISTRY ──
+    subgraph CAPABILITIES ["🛠️ Capability Registry (Generic/Reusable)"]
+        direction TB
+        CapAssess[Assessment Capability<br/>Parse Intent]
+        CapSched[Scheduling Capability<br/>Manage Queues]
+        CapDisc[Discovery Capability<br/>Locate Targets]
+        CapScript[Scripting Capability<br/>Generate Extractors]
+        CapProxy[Proxy Manager Capability<br/>Rotate & Evade]
+        CapExtr[Extraction Capability<br/>Execute Target]
+        CapQA[QA Validation Capability<br/>Ensure Schema & Score]
+        CapDeliv[Delivery Capability<br/>Secure Transport]
+    end
+
+    %% ── FLOW CONNECTIONS ──
+    %% The system takes the abstract input
+    Input --> Orchestrator
+    
+    %% The Orchestrator interacts with the Event Bus to manage states
+    Orchestrator -->|Pub/Sub Events| EventBus
+    
+    %% Capabilities are triggered by the Orchestrator and read/write to the World Model
+    Orchestrator -->|Delegates Task| CAPABILITIES
+    CAPABILITIES <-->|Read State / Write Output| EventBus
+    
+    %% When the job hits the end goal, generate output
+    EventBus -.->|When target achieved| Output
+    
+    %% The dashboard gives humans a view of the world model and HITL overrides
+    EventBus -->|Streams Live Data| Dashboard
+    HITL -.->|Escalation| Dashboard
+    Dashboard -.->|Resolution| HITL
+
+    %% ── STYLING ──
+    classDef layer fill:#1e293b,stroke:#3b82f6,color:#fff,stroke-width:2px,stroke-dasharray: 5 5
+    classDef core fill:#2563eb,stroke:#1d4ed8,color:#fff,stroke-width:2px
+    classDef data fill:#059669,stroke:#047857,color:#fff,stroke-width:2px
+    classDef cap fill:#ea580c,stroke:#9a3412,color:#fff,stroke-width:1px
+    classDef ui fill:#8b5cf6,stroke:#6d28d9,color:#fff,stroke-width:2px
+
+    class CONTRACT layer
+    class Orchestrator,HITL core
+    class EventBus data
+    class CapAssess,CapSched,CapDisc,CapScript,CapProxy,CapExtr,CapQA,CapDeliv cap
+    class Dashboard ui

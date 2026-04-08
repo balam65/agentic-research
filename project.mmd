@@ -1,0 +1,35 @@
+flowchart TD
+    Client[🎯 Client Request<br>Chat / PDF / API / Brief] 
+    Client --> Governance
+    subgraph Governance ["Phase 0: Governance & Control"]
+        Master[Master Agent<br>Orchestration & State] 
+        Comp[Compliance Agent<br>Security & PII Rules]
+    end
+    Governance --> P1
+    subgraph P1 ["Phase 1: Intake"]
+        Assess[Assessment Agent<br>Intent → Research Brief] 
+        Sched[Scheduling Agent<br>SLA & Queue]
+    end
+    P1 --> P2
+    subgraph P2 ["Phase 2: Research Onboarding"]
+        Disc[Discovery Agent<br>Deep Links & APIs] 
+        SME[SME Agent<br>Feasibility & Evasion] 
+        Script[Scripting Agent<br>Selectors & Versioning]
+    end
+    P2 --> P3
+    subgraph P3 ["Phase 3: Production Progress"]
+        Extr[Extraction Agent<br>Browser / HTTP / PDF] 
+        Scale[Production Agent<br>Proxies + Auto-Scale]
+    end
+    P3 --> P4
+    subgraph P4 ["Phase 4: Quality Gate"]
+        Trans[Transformation Agent<br>Schema Normalization] 
+        QA[QA Agent<br>Confidence Scoring]
+    end
+    P4 --> P5
+    subgraph P5 ["Phase 5: Delivery & Monitoring"]
+        Deliv[Delivery Agent<br>SFTP / S3 / API] 
+        Sent[Sentinel Agent<br>SLA & Alerts] 
+        Supp[Support Agent<br>Client Queries]
+    end
+    P5 --> Output[Delivery <br> <br> ]

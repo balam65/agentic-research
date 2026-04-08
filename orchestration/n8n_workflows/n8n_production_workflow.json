@@ -3,15 +3,14 @@
   "nodes": [
     {
       "parameters": {
-        "workflowId": "discovery-subworkflow",
-        "mode": "each"
+        "inputSource": "passthrough"
       },
-      "id": "trigger-phase-3",
-      "name": "Execute Workflow Trigger",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "id": "subworkflow-trigger",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
       "position": [
-        400,
+        380,
         300
       ]
     },
@@ -24,14 +23,14 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        600,
+        620,
         300
       ]
     },
     {
       "parameters": {
         "dataType": "string",
-        "value1": "={{ $node[\"Execute Workflow Trigger\"].json[\"source_type\"] }}",
+        "value1": "={{ $node[\"When Executed by Another Workflow\"].json[\"source_type\"] }}",
         "rules": {
           "rules": [
             {
@@ -45,61 +44,61 @@
           ]
         }
       },
-      "id": "source-router",
+      "id": "source-type-router",
       "name": "Switch: Source Type",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        800,
+        860,
         300
       ]
     },
     {
       "parameters": {
-        "url": "={{ $node[\"Execute Workflow Trigger\"].json[\"target_url\"] }}",
+        "url": "={{ $node[\"When Executed by Another Workflow\"].json[\"target_url\"] }}",
         "options": {
           "proxy": "= {{ $node[\"Code: Proxy Rotator\"].json[\"proxy\"] }}",
           "headers": "= {{ $node[\"Code: Proxy Rotator\"].json[\"headers\"] }}"
         }
       },
-      "id": "http-adapter",
+      "id": "static-extractor",
       "name": "HTTP: Static Extractions",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        1000,
-        200
+        1100,
+        180
       ]
     },
     {
       "parameters": {
         "action": "goto",
-        "url": "={{ $node[\"Execute Workflow Trigger\"].json[\"target_url\"] }}",
+        "url": "={{ $node[\"When Executed by Another Workflow\"].json[\"target_url\"] }}",
         "options": {
           "stealth": true,
           "proxy": "= {{ $node[\"Code: Proxy Rotator\"].json[\"proxy\"] }}"
         }
       },
-      "id": "browser-adapter",
+      "id": "playwright-extractor",
       "name": "Browser: Playwright Node",
       "type": "n8n-nodes-base.playwright",
       "typeVersion": 1,
       "position": [
-        1000,
-        450
+        1100,
+        440
       ]
     },
     {
       "parameters": {
-        "prompt": "=Using the raw HTML from extraction: {{ $json.body }}. Extract values for fields: {{ $node[\"Execute Workflow Trigger\"].json[\"topic_list\"] }} using the provided selectors: {{ $node[\"Execute Workflow Trigger\"].json[\"selectors\"] }}.",
+        "prompt": "=Using the raw extraction payload {{ $json }} and selectors {{ $node[\"When Executed by Another Workflow\"].json[\"selectors\"] }}, map the requested fields {{ $node[\"When Executed by Another Workflow\"].json[\"topic_list\"] }} and return success plus extracted data.",
         "options": {}
       },
-      "id": "extraction-agent",
+      "id": "map-results-agent",
       "name": "AI Agent: Map Results",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.2,
       "position": [
-        1250,
+        1360,
         300
       ]
     },
@@ -114,13 +113,46 @@
           ]
         }
       },
-      "id": "success-check",
-      "name": "If: Strike Check?",
+      "id": "extraction-success-gate",
+      "name": "If: Extraction Successful?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        1450,
+        1600,
         300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = items[0];\nconst retryCount = Number(item.json.retry_count ?? 0) + 1;\nconst maxRetries = Number(item.json.max_retries ?? 3);\nreturn [{ json: { ...item.json, retry_count: retryCount, max_retries: maxRetries } }];"
+      },
+      "id": "retry-controller",
+      "name": "Code: Retry Controller",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ Number($json.retry_count) < Number($json.max_retries) }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "retry-budget-gate",
+      "name": "If: Retry Remaining?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2080,
+        460
       ]
     },
     {
@@ -128,13 +160,26 @@
         "amount": 5,
         "unit": "seconds"
       },
-      "id": "wait-retry",
+      "id": "backoff-wait",
       "name": "Wait: Exponential Backoff",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
       "position": [
-        1450,
-        550
+        2320,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map((item) => ({\n  json: {\n    ...item.json,\n    trigger_event: 'break_detected',\n    handoff_reason: 'retry_budget_exhausted',\n    failure_stage: 'production_capture'\n  }\n}));"
+      },
+      "id": "prepare-break-handoff",
+      "name": "Code: Prepare Break Handoff",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        2320,
+        560
       ]
     },
     {
@@ -147,13 +192,27 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        1700,
-        300
+        1840,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "master-orchestration",
+        "mode": "each"
+      },
+      "id": "master-reentry",
+      "name": "Execute: Master Orchestration",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        2560,
+        560
       ]
     }
   ],
   "connections": {
-    "Execute Workflow Trigger": {
+    "When Executed by Another Workflow": {
       "main": [
         [
           {
@@ -188,7 +247,7 @@
           {
             "node": "Browser: Playwright Node",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ]
       ]
@@ -219,14 +278,14 @@
       "main": [
         [
           {
-            "node": "If: Strike Check?",
+            "node": "If: Extraction Successful?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If: Strike Check?": {
+    "If: Extraction Successful?": {
       "main": [
         [
           {
@@ -236,11 +295,40 @@
           }
         ],
         [
-           {
+          {
+            "node": "Code: Retry Controller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Retry Controller": {
+      "main": [
+        [
+          {
+            "node": "If: Retry Remaining?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Retry Remaining?": {
+      "main": [
+        [
+          {
             "node": "Wait: Exponential Backoff",
             "type": "main",
-            "index": 1
-           }
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code: Prepare Break Handoff",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -249,6 +337,17 @@
         [
           {
             "node": "Code: Proxy Rotator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Prepare Break Handoff": {
+      "main": [
+        [
+          {
+            "node": "Execute: Master Orchestration",
             "type": "main",
             "index": 0
           }
