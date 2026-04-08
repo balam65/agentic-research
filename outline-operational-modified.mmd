@@ -1,73 +1,70 @@
 %%{init: {'themeVariables': { 'lineColor': '#ffffff' }}}%%
 flowchart TD
-    %% ── TRIGGER ──
-    Client[🎯 Client Request<br>Chat / PDF / API / Brief]
-
-    %% ── SETUP PATH ──
-    Client --> Master
-
-    subgraph SETUP ["🔧 SETUP PATH — Runs Once / On Break or Drift"]
-        Master[Master Agent<br>Orchestration & State]
-        --> Comp[Compliance Agent<br>Security & PII Rules]
-        --> Assess[Assessment Agent<br>Intent → Research Brief]
-        --> Sched[Scheduling Agent<br>SLA & Queue]
-
-        %% ── BRANCH 1: Script Availability Check ──
-        Sched --> ScriptCheck{📋 Pre-existing<br>Script Available?}
-        ScriptCheck -- "✅ Yes — Reuse Script" --> ScriptSelect[Script Selector<br>Match & Version Check]
-        ScriptCheck -- "❌ No — Build New" --> Disc[Discovery Agent<br>Deep Links & APIs]
-        --> SME[SME Agent<br>Feasibility & Evasion]
-        --> Script[Scripting Agent<br>Selectors & Versioning]
+    %% ── NON-NEGOTIABLE I/O CONTRACT ──
+    subgraph CONTRACT ["📜 Top-Level Contract"]
+        direction LR
+        Input[📥 Input: Target & Constraints]
+        Output[🚀 Output: Validated Extracted Data]
     end
 
-    %% ── HANDOFF ──
-    Script -- "✅ Script Ready" --> Scale
-    ScriptSelect -- "✅ Existing Script Loaded" --> Scale
-
-    %% ── PRODUCTION LOOP ──
-    subgraph LOOP ["🔄 PRODUCTION LOOP — Runs Continuously"]
-        Scale[Production Agent<br>Proxies + Auto-Scale]
-        --> Extr[Extraction Agent<br>Browser / HTTP / PDF]
-        --> Trans[Transformation Agent<br>Schema Normalization]
-        --> QA[QA Agent<br>Confidence Scoring]
-
-        %% Delivery row — horizontal alignment via LR subgraph
-        subgraph DELIVER [" "]
-            direction LR
-            Deliv[Delivery Agent<br>SFTP / S3 / API] --> Output[🚀 Secure Delivered Dataset]
-        end
-
-        QA --> Deliv
-        Deliv --> Sent[Sentinel Agent<br>SLA & Alerts]
-        --> Supp[Support Agent<br>Client Queries]
-
-        %% Drift flag stays inside Loop box
-        Sent -. "📉 Drift Detected" .-> Drift[📉 Re-orchestrate Pipeline]
+    %% ── SURFACE AREAS ──
+    subgraph SURFACES ["💻 Surface Areas (Visibility)"]
+        Dashboard[Command Center Dashboard<br/>Live Observability & Control]
     end
 
-    %% ── LOOP BACK ──
-    Supp -- "🔄 Next Scheduled Run" --> Scale
+    %% ── INTELLIGENCE LAYER ──
+    subgraph INTELLIGENCE ["🧠 Intelligence Layer"]
+        Orchestrator[Dynamic Event Router<br/>Assembles Capabilities]
+        HITL[HITL Policy Engine<br/>Confidence Thresholds]
+        Orchestrator <--> HITL
+    end
 
-    %% ── BRANCH 2: Break vs Drift Repair ──
-    Extr -. "🚨 Break (Retries Exhausted)" .-> Disc
-    Drift -. "↩ Return to Scheduling" .-> Sched
+    %% ── WORLD MODEL ──
+    subgraph WORLD_MODEL ["🌍 World Model (Shared Situational Awareness)"]
+        EventBus[(Event Store / Supabase DB<br/>Logs actions, outputs, anomalies)]
+    end
+
+    %% ── CAPABILITY REGISTRY ──
+    subgraph CAPABILITIES ["🛠️ Capability Registry (Generic/Reusable)"]
+        direction TB
+        CapAssess[Assessment Capability<br/>Parse Intent]
+        CapSched[Scheduling Capability<br/>Manage Queues]
+        CapDisc[Discovery Capability<br/>Locate Targets]
+        CapScript[Scripting Capability<br/>Generate Extractors]
+        CapProxy[Proxy Manager Capability<br/>Rotate & Evade]
+        CapExtr[Extraction Capability<br/>Execute Target]
+        CapQA[QA Validation Capability<br/>Ensure Schema & Score]
+        CapDeliv[Delivery Capability<br/>Secure Transport]
+    end
+
+    %% ── FLOW CONNECTIONS ──
+    %% The system takes the abstract input
+    Input --> Orchestrator
+    
+    %% The Orchestrator interacts with the Event Bus to manage states
+    Orchestrator -->|Pub/Sub Events| EventBus
+    
+    %% Capabilities are triggered by the Orchestrator and read/write to the World Model
+    Orchestrator -->|Delegates Task| CAPABILITIES
+    CAPABILITIES <-->|Read State / Write Output| EventBus
+    
+    %% When the job hits the end goal, generate output
+    EventBus -.->|When target achieved| Output
+    
+    %% The dashboard gives humans a view of the world model and HITL overrides
+    EventBus -->|Streams Live Data| Dashboard
+    HITL -.->|Escalation| Dashboard
+    Dashboard -.->|Resolution| HITL
 
     %% ── STYLING ──
-    classDef done fill:#22c55e,stroke:#166534,color:#fff,stroke-width:2px
-    classDef progress fill:#eab308,stroke:#854d0e,color:#000,stroke-width:2px
-    classDef gov fill:#64748b,stroke:#1e2937,color:#fff
-    classDef output fill:#8b5cf6,stroke:#5b21b6,color:#fff,stroke-width:2px
-    classDef decision fill:#f97316,stroke:#c2410c,color:#fff,stroke-width:2px
-    classDef reuse fill:#06b6d4,stroke:#0e7490,color:#fff,stroke-width:2px
-    classDef drift fill:#ef4444,stroke:#b91c1c,color:#fff,stroke-width:2px
+    classDef layer fill:#1e293b,stroke:#3b82f6,color:#fff,stroke-width:2px,stroke-dasharray: 5 5
+    classDef core fill:#2563eb,stroke:#1d4ed8,color:#fff,stroke-width:2px
+    classDef data fill:#059669,stroke:#047857,color:#fff,stroke-width:2px
+    classDef cap fill:#ea580c,stroke:#9a3412,color:#fff,stroke-width:1px
+    classDef ui fill:#8b5cf6,stroke:#6d28d9,color:#fff,stroke-width:2px
 
-    class Master,Comp gov
-    class Assess,Sched,Disc,SME,Script,Trans,QA,Deliv,Sent,Supp done
-    class Extr,Scale progress
-    class Output output
-    class ScriptCheck decision
-    class ScriptSelect reuse
-    class Drift drift
-
-    %% Hide the DELIVER subgraph border so it looks seamless
-    style DELIVER fill:none,stroke:none
+    class CONTRACT layer
+    class Orchestrator,HITL core
+    class EventBus data
+    class CapAssess,CapSched,CapDisc,CapScript,CapProxy,CapExtr,CapQA,CapDeliv cap
+    class Dashboard ui

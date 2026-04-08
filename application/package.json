@@ -1,0 +1,31 @@
+{
+  "name": "agentic-search-application",
+  "version": "1.0.0",
+  "description": "A full life-cycle agentic data acquisition and delivery pipeline designed to automate and scale intelligent data production workflows.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/balam65/agentic-research.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/balam65/agentic-research/issues"
+  },
+  "homepage": "https://github.com/balam65/agentic-research#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.102.1",
+    "@types/node": "^25.5.2",
+    "playwright": "^1.59.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
+  }
+}
