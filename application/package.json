@@ -23,9 +23,11 @@
   "homepage": "https://github.com/balam65/agentic-research#readme",
   "dependencies": {
     "@supabase/supabase-js": "^2.102.1",
-    "@types/node": "^25.5.2",
     "playwright": "^1.59.1",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2"
   }
 }

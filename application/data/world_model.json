@@ -1,0 +1,189 @@
+{
+  "tasks": {
+    "e8d8cf3f-e433-480d-a581-e0e262871f4c": {
+      "task_id": "e8d8cf3f-e433-480d-a581-e0e262871f4c",
+      "status": "completed",
+      "input_spec": {
+        "target": "example.com",
+        "target_domain": "E-commerce"
+      },
+      "output_expectation": {
+        "format": "JSON",
+        "schema": [
+          "title",
+          "price"
+        ]
+      },
+      "priority": 1,
+      "timestamps": {
+        "created_at": "2026-04-08T10:23:16.213Z",
+        "updated_at": "2026-04-08T10:23:16.219Z",
+        "completed_at": "2026-04-08T10:23:16.219Z"
+      }
+    }
+  },
+  "world_state": {
+    "e8d8cf3f-e433-480d-a581-e0e262871f4c": {
+      "task_id": "e8d8cf3f-e433-480d-a581-e0e262871f4c",
+      "current_context": {
+        "requirement_parser": {
+          "success": true,
+          "dummyData": "Output from requirement_parser"
+        },
+        "url_discovery": {
+          "success": true,
+          "dummyData": "Output from url_discovery"
+        },
+        "data_extractor": {
+          "success": true,
+          "dummyData": "Output from data_extractor"
+        }
+      },
+      "active_hypotheses": [],
+      "known_constraints": [],
+      "next_best_actions": []
+    }
+  },
+  "events": [
+    {
+      "event_id": "83009ff1-ebb2-41fb-ac6f-2c9018633c84",
+      "task_id": "e8d8cf3f-e433-480d-a581-e0e262871f4c",
+      "capability_name": "requirement_parser",
+      "event_type": "action started",
+      "payload": {
+        "input": {
+          "requirement_parser": {
+            "success": true,
+            "dummyData": "Output from requirement_parser"
+          },
+          "url_discovery": {
+            "success": true,
+            "dummyData": "Output from url_discovery"
+          },
+          "data_extractor": {
+            "success": true,
+            "dummyData": "Output from data_extractor"
+          }
+        }
+      },
+      "timestamp": "2026-04-08T10:23:16.217Z"
+    },
+    {
+      "event_id": "d8e0fe9f-6c2c-42d9-81f8-669463f4566f",
+      "task_id": "e8d8cf3f-e433-480d-a581-e0e262871f4c",
+      "capability_name": "requirement_parser",
+      "event_type": "action completed",
+      "payload": {
+        "result": {
+          "success": true,
+          "dummyData": "Output from requirement_parser"
+        }
+      },
+      "timestamp": "2026-04-08T10:23:16.218Z"
+    },
+    {
+      "event_id": "f0dbeaab-3943-44b2-93f5-a95ef10ef534",
+      "task_id": "e8d8cf3f-e433-480d-a581-e0e262871f4c",
+      "capability_name": "url_discovery",
+      "event_type": "action started",
+      "payload": {
+        "input": {
+          "requirement_parser": {
+            "success": true,
+            "dummyData": "Output from requirement_parser"
+          },
+          "url_discovery": {
+            "success": true,
+            "dummyData": "Output from url_discovery"
+          },
+          "data_extractor": {
+            "success": true,
+            "dummyData": "Output from data_extractor"
+          }
+        }
+      },
+      "timestamp": "2026-04-08T10:23:16.218Z"
+    },
+    {
+      "event_id": "a8e4284a-ec8a-4733-8b5a-e17ce71325a9",
+      "task_id": "e8d8cf3f-e433-480d-a581-e0e262871f4c",
+      "capability_name": "url_discovery",
+      "event_type": "action completed",
+      "payload": {
+        "result": {
+          "success": true,
+          "dummyData": "Output from url_discovery"
+        }
+      },
+      "timestamp": "2026-04-08T10:23:16.218Z"
+    },
+    {
+      "event_id": "03e7bbe0-ee00-489a-b65a-2abb900fae0b",
+      "task_id": "e8d8cf3f-e433-480d-a581-e0e262871f4c",
+      "capability_name": "data_extractor",
+      "event_type": "action started",
+      "payload": {
+        "input": {
+          "requirement_parser": {
+            "success": true,
+            "dummyData": "Output from requirement_parser"
+          },
+          "url_discovery": {
+            "success": true,
+            "dummyData": "Output from url_discovery"
+          },
+          "data_extractor": {
+            "success": true,
+            "dummyData": "Output from data_extractor"
+          }
+        }
+      },
+      "timestamp": "2026-04-08T10:23:16.219Z"
+    },
+    {
+      "event_id": "7b943dff-09c8-441d-9396-3cedfdd338a2",
+      "task_id": "e8d8cf3f-e433-480d-a581-e0e262871f4c",
+      "capability_name": "data_extractor",
+      "event_type": "action completed",
+      "payload": {
+        "result": {
+          "success": true,
+          "dummyData": "Output from data_extractor"
+        }
+      },
+      "timestamp": "2026-04-08T10:23:16.219Z"
+    }
+  ],
+  "artifacts": {},
+  "validation_records": [],
+  "decision_log": [
+    {
+      "task_id": "e8d8cf3f-e433-480d-a581-e0e262871f4c",
+      "reasoning_summary": "Gap found. Chosen requirement_parser",
+      "chosen_capability": "requirement_parser",
+      "why_selected": "Internal Orchestrator Logic logic loop 1",
+      "timestamp": "2026-04-08T10:23:16.217Z"
+    },
+    {
+      "task_id": "e8d8cf3f-e433-480d-a581-e0e262871f4c",
+      "reasoning_summary": "Gap found. Chosen url_discovery",
+      "chosen_capability": "url_discovery",
+      "why_selected": "Internal Orchestrator Logic logic loop 2",
+      "timestamp": "2026-04-08T10:23:16.218Z"
+    },
+    {
+      "task_id": "e8d8cf3f-e433-480d-a581-e0e262871f4c",
+      "reasoning_summary": "Gap found. Chosen data_extractor",
+      "chosen_capability": "data_extractor",
+      "why_selected": "Internal Orchestrator Logic logic loop 3",
+      "timestamp": "2026-04-08T10:23:16.218Z"
+    },
+    {
+      "task_id": "e8d8cf3f-e433-480d-a581-e0e262871f4c",
+      "reasoning_summary": "Gap found. Chosen TERMINATE",
+      "chosen_capability": "TERMINATE",
+      "why_selected": "Internal Orchestrator Logic logic loop 4",
+      "timestamp": "2026-04-08T10:23:16.219Z"
+    }
+  ]
+}
