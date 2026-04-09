@@ -34,6 +34,7 @@ export type RoutingEventType =
   | 'QA_REQUIRED'
   | 'RETRY_REQUIRED'
   | 'HITL_REQUIRED'
+  | 'MODEL_UNAVAILABLE'
   | 'WORKFLOW_COMPLETED'
   | 'WORKFLOW_FAILED'
   | 'NO_ACTION_REQUIRED'
@@ -53,11 +54,21 @@ export type ArtifactKind =
 export interface NonNegotiableInput {
   requestId: string;
   targetSpec: string;
+  searchParameters?: {
+    origin?: string;
+    destination?: string;
+    departureDate?: string;
+    [key: string]: string | undefined;
+  };
+  intentContext?: string;
   constraints: {
     maxRecords?: number;
     budgetUsd?: number;
     maxTimeMs?: number;
     requiresJsRendering?: boolean;
+    proxyTier?: 'residential' | 'datacenter' | 'mobile' | 'unknown';
+    antiBotRisk?: 'low' | 'medium' | 'high' | 'unknown';
+    authenticationRequired?: boolean;
     deliveryMode?: 'webhook' | 's3' | 'sftp' | 'database';
     humanReviewAllowed?: boolean;
   };
@@ -93,11 +104,21 @@ export interface ValidatedInputEvent {
       url_or_domain: string;
       scope: string;
     };
+    search_parameters: {
+      origin?: string;
+      destination?: string;
+      departure_date?: string;
+      [key: string]: string | undefined;
+    };
+    intent_context: string;
     constraints: {
       max_budget?: number;
       max_time_ms?: number;
       requires_js_rendering?: boolean;
       human_in_loop_required?: boolean;
+      proxy_tier?: 'residential' | 'datacenter' | 'mobile' | 'unknown';
+      anti_bot_risk?: 'low' | 'medium' | 'high' | 'unknown';
+      authentication_required?: boolean;
     };
     expected_schema: Record<string, string>;
   };
@@ -128,6 +149,7 @@ export interface RoutingDecision {
   workflow_id: string;
   next_event: RoutingEventType;
   target_module: string | null;
+  decision_source: 'model' | 'control_policy';
   status: WorkflowStatus;
   reasoning: string;
   requires_human_review: boolean;

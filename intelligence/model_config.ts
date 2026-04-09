@@ -52,7 +52,7 @@ export function getModelConfig(): ModelConfig {
   const provider = envValue('MODEL_PROVIDER', 'local').toLowerCase();
   const apiKey = envValue('MODEL_API_KEY');
   const model = envValue('MODEL_NAME', 'local-model');
-  const baseUrl = envValue('MODEL_BASE_URL', 'http://localhost:1234');
+  const baseUrl = envValue('MODEL_BASE_URL');
   const chatEndpoint = envValue('MODEL_CHAT_ENDPOINT', '/v1/chat/completions');
 
   return {

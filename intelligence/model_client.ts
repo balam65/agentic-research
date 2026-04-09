@@ -37,6 +37,9 @@ function extractFirstJsonObject(value: string): string {
 export class ModelClient {
   async completeJson(messages: ChatMessage[]): Promise<string> {
     const config = getModelConfig();
+    if (!config.baseUrl.trim()) {
+      throw new Error('MODEL_BASE_URL is not configured.');
+    }
     const url = new URL(config.chatEndpoint, config.baseUrl.endsWith('/') ? config.baseUrl : `${config.baseUrl}/`);
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -74,6 +77,7 @@ export class ModelClient {
     }
 
     console.info(`[ModelClient] Received model response chars=${content.length}`);
+    console.info(`[ModelClient] Raw model content=${content}`);
     return extractFirstJsonObject(content);
   }
 }

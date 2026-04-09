@@ -81,6 +81,7 @@ export class AgenticOrchestrator {
         confidence: analysis.confidence,
         requiresHumanReview: false,
         event,
+        decisionSource: 'control_policy',
         status: 'failed',
         nextEventOverride: 'WORKFLOW_FAILED',
       });
@@ -97,6 +98,7 @@ export class AgenticOrchestrator {
         confidence: analysis.confidence,
         requiresHumanReview: policyDecision.requiresHumanReview,
         event,
+        decisionSource: 'control_policy',
         status: policyDecision.status,
         nextEventOverride: policyDecision.forceNextEvent,
       });
@@ -107,78 +109,140 @@ export class AgenticOrchestrator {
 
     const candidates = await this.planner.scoreCapabilities(world, this.capabilities);
     const candidateIds = candidates.map((candidate) => candidate.capability.descriptor.id);
+    if (candidateIds.length === 0) {
+      const noCandidateDecision = this.router.createDecision({
+        workflowId,
+        selectedCapability: null,
+        reasoning: 'No viable capability candidates were found for the current context.',
+        confidence: analysis.confidence,
+        requiresHumanReview: true,
+        event,
+        decisionSource: 'control_policy',
+        status: 'blocked',
+        nextEventOverride: 'WORKFLOW_FAILED',
+      });
+      this.syncTaskStatusFromDecision(workflowId, noCandidateDecision);
+      this.recordDecision(workflowId, noCandidateDecision);
+      return noCandidateDecision;
+    }
 
-    let selectedCapability: CapabilityModule | null = candidates[0]?.capability ?? null;
-    let reasoning = candidates[0]?.rationale ?? 'Planner found no viable capability.';
+    let selectedCapability: CapabilityModule | null = null;
+    let reasoning = '';
     let confidence = analysis.confidence;
 
     const config = getModelConfig();
+    if (!config.intelligenceAgentEnabled) {
+      const unavailable = this.router.createDecision({
+        workflowId,
+        selectedCapability: null,
+        reasoning: 'Model-driven routing is disabled by configuration.',
+        confidence: analysis.confidence,
+        requiresHumanReview: true,
+        event,
+        decisionSource: 'control_policy',
+        status: 'blocked',
+        nextEventOverride: 'MODEL_UNAVAILABLE',
+      });
+      this.syncTaskStatusFromDecision(workflowId, unavailable);
+      this.recordDecision(workflowId, unavailable);
+      return unavailable;
+    }
+
     const canCallModel =
-      config.intelligenceAgentEnabled &&
-      candidateIds.length > 0 &&
-      (config.apiKey.trim().length > 0 || config.provider === 'local' || config.provider === 'lmstudio');
-    if (canCallModel) {
-      try {
-        const aiDecision = await this.intelligenceAgent.decideForEvent({
-          world,
-          capabilities: this.capabilities,
-          event,
-          workflowState,
-          candidateCapabilityIds: candidateIds,
-        });
-        selectedCapability = this.capabilities.find(
-          (capability) => capability.descriptor.id === aiDecision.selected_capability_id,
-        ) ?? selectedCapability;
-        reasoning = aiDecision.reasoning_summary || reasoning;
-        confidence = aiDecision.confidence;
+      config.apiKey.trim().length > 0 || config.provider === 'local' || config.provider === 'lmstudio';
+    if (!canCallModel) {
+      const unavailable = this.router.createDecision({
+        workflowId,
+        selectedCapability: null,
+        reasoning: 'Model configuration does not allow a request (missing key for non-local provider).',
+        confidence: analysis.confidence,
+        requiresHumanReview: true,
+        event,
+        decisionSource: 'control_policy',
+        status: 'blocked',
+        nextEventOverride: 'MODEL_UNAVAILABLE',
+      });
+      this.syncTaskStatusFromDecision(workflowId, unavailable);
+      this.recordDecision(workflowId, unavailable);
+      return unavailable;
+    }
 
-        this.store.recordIntelligenceDecision(workflowId, {
-          model: config.model,
-          selectedCapabilityId: aiDecision.selected_capability_id,
-          rationale: aiDecision.reasoning_summary,
+    try {
+      const aiDecision = await this.intelligenceAgent.decideForEvent({
+        world,
+        capabilities: this.capabilities,
+        event,
+        workflowState,
+        candidateCapabilityIds: candidateIds,
+      });
+      selectedCapability = this.capabilities.find(
+        (capability) => capability.descriptor.id === aiDecision.selected_capability_id,
+      ) ?? null;
+      reasoning = aiDecision.reasoning_summary;
+      confidence = aiDecision.confidence;
+
+      this.store.recordIntelligenceDecision(workflowId, {
+        model: config.model,
+        selectedCapabilityId: aiDecision.selected_capability_id,
+        rationale: aiDecision.reasoning_summary,
+        confidence: aiDecision.confidence,
+        requiresHumanReview: aiDecision.requires_human_review,
+        stopExecution: aiDecision.stop_execution,
+      });
+
+      if (aiDecision.stop_execution) {
+        const stopped = this.router.createDecision({
+          workflowId,
+          selectedCapability: null,
+          reasoning: aiDecision.reasoning_summary,
           confidence: aiDecision.confidence,
-          requiresHumanReview: aiDecision.requires_human_review,
-          stopExecution: aiDecision.stop_execution,
+          requiresHumanReview: false,
+          event,
+          decisionSource: 'model',
+          status: 'completed',
+          nextEventOverride: 'WORKFLOW_COMPLETED',
         });
-
-        if (aiDecision.stop_execution) {
-          const stopped = this.router.createDecision({
-            workflowId,
-            selectedCapability: null,
-            reasoning: aiDecision.reasoning_summary,
-            confidence: aiDecision.confidence,
-            requiresHumanReview: false,
-            event,
-            status: 'completed',
-            nextEventOverride: 'WORKFLOW_COMPLETED',
-          });
-          this.syncTaskStatusFromDecision(workflowId, stopped);
-          this.recordDecision(workflowId, stopped);
-          return stopped;
-        }
-
-        if (aiDecision.requires_human_review) {
-          const humanReview = this.router.createDecision({
-            workflowId,
-            selectedCapability: selectedCapability ?? null,
-            reasoning: aiDecision.reasoning_summary,
-            confidence: aiDecision.confidence,
-            requiresHumanReview: true,
-            event,
-            status: 'waiting_for_human',
-            nextEventOverride: 'HITL_REQUIRED',
-          });
-          this.syncTaskStatusFromDecision(workflowId, humanReview);
-          this.recordDecision(workflowId, humanReview);
-          return humanReview;
-        }
-      } catch (error) {
-        this.store.recordError(workflowId, {
-          source: 'intelligence_agent',
-          message: error instanceof Error ? error.message : 'Unknown intelligence decision error.',
-          retriable: true,
-        });
+        this.syncTaskStatusFromDecision(workflowId, stopped);
+        this.recordDecision(workflowId, stopped);
+        return stopped;
       }
+
+      if (aiDecision.requires_human_review) {
+        const humanReview = this.router.createDecision({
+          workflowId,
+          selectedCapability: null,
+          reasoning: aiDecision.reasoning_summary,
+          confidence: aiDecision.confidence,
+          requiresHumanReview: true,
+          event,
+          decisionSource: 'model',
+          status: 'waiting_for_human',
+          nextEventOverride: 'HITL_REQUIRED',
+        });
+        this.syncTaskStatusFromDecision(workflowId, humanReview);
+        this.recordDecision(workflowId, humanReview);
+        return humanReview;
+      }
+    } catch (error) {
+      this.store.recordError(workflowId, {
+        source: 'intelligence_agent',
+        message: error instanceof Error ? error.message : 'Unknown intelligence decision error.',
+        retriable: true,
+      });
+      const unavailable = this.router.createDecision({
+        workflowId,
+        selectedCapability: null,
+        reasoning: 'Model call failed or returned invalid output; execution routing is blocked.',
+        confidence: analysis.confidence,
+        requiresHumanReview: true,
+        event,
+        decisionSource: 'control_policy',
+        status: 'blocked',
+        nextEventOverride: 'MODEL_UNAVAILABLE',
+      });
+      this.syncTaskStatusFromDecision(workflowId, unavailable);
+      this.recordDecision(workflowId, unavailable);
+      return unavailable;
     }
 
     const goalsSatisfied = world.task.outputGoal.every((goal) =>
@@ -192,6 +256,7 @@ export class AgenticOrchestrator {
         confidence: Math.max(confidence, 0.9),
         requiresHumanReview: false,
         event,
+        decisionSource: 'control_policy',
         status: 'completed',
         nextEventOverride: 'WORKFLOW_COMPLETED',
       });
@@ -207,8 +272,9 @@ export class AgenticOrchestrator {
       confidence,
       requiresHumanReview: false,
       event,
+      decisionSource: 'model',
       status: selectedCapability ? 'in_progress' : 'blocked',
-      nextEventOverride: selectedCapability ? undefined : 'WORKFLOW_FAILED',
+      nextEventOverride: selectedCapability ? undefined : 'MODEL_UNAVAILABLE',
     });
     this.syncTaskStatusFromDecision(workflowId, decision);
     this.store.updateWorkflowState(workflowId, (state) => {
@@ -232,11 +298,24 @@ export class AgenticOrchestrator {
           url_or_domain: input.targetSpec,
           scope: 'requested_scope',
         },
+        search_parameters: {
+          ...(input.searchParameters
+            ? {
+                origin: input.searchParameters.origin,
+                destination: input.searchParameters.destination,
+                departure_date: input.searchParameters.departureDate,
+              }
+            : {}),
+        },
+        intent_context: input.intentContext ?? 'Input submitted through legacy submit interface.',
         constraints: {
           max_budget: input.constraints.budgetUsd,
           max_time_ms: input.constraints.maxTimeMs,
           requires_js_rendering: input.constraints.requiresJsRendering,
           human_in_loop_required: input.constraints.humanReviewAllowed === true,
+          proxy_tier: input.constraints.proxyTier,
+          anti_bot_risk: input.constraints.antiBotRisk,
+          authentication_required: input.constraints.authenticationRequired,
         },
         expected_schema: input.requestedSchema,
       },
@@ -285,12 +364,21 @@ export class AgenticOrchestrator {
           input: {
             requestId: event.event_id,
             targetSpec: event.payload.target.url_or_domain,
+            searchParameters: {
+              origin: event.payload.search_parameters.origin,
+              destination: event.payload.search_parameters.destination,
+              departureDate: event.payload.search_parameters.departure_date,
+            },
+            intentContext: event.payload.intent_context,
             requestedSchema: event.payload.expected_schema,
             constraints: {
               budgetUsd: event.payload.constraints.max_budget,
               maxTimeMs: event.payload.constraints.max_time_ms,
               requiresJsRendering: event.payload.constraints.requires_js_rendering,
               humanReviewAllowed: event.payload.constraints.human_in_loop_required,
+              proxyTier: event.payload.constraints.proxy_tier,
+              antiBotRisk: event.payload.constraints.anti_bot_risk,
+              authenticationRequired: event.payload.constraints.authentication_required,
             },
           },
           outputGoal: ['final_result'],
