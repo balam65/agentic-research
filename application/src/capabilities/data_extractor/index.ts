@@ -1,58 +1,76 @@
-import { WorldModelStore, WorldModelEvent } from '../../world_model/store';
+import { DatabaseStore } from '../../world_model/store';
 // import { chromium } from 'playwright'; // Uncomment in full production environment
 
 export class DataExtractorCapability {
-  private store: WorldModelStore;
+  private db: DatabaseStore;
 
   constructor() {
-    this.store = new WorldModelStore();
+    this.db = new DatabaseStore();
   }
 
-  async processWithPlaywright(proxyEvent: WorldModelEvent) {
-    const url = proxyEvent.payload.target_url;
-    const script = proxyEvent.payload.playwright_script;
-    console.log(`[CapExtr] Spinning up Playwright context for ${url} via ${proxyEvent.payload.proxy_id}`);
+  async execute(jobId: string) {
+    // 1. Reading the Contract (Justin's Rule)
+    const job = await this.db.getJob(jobId);
+    if (!job || !job.input_params) throw new Error(`Invalid Job or missing input_params for ${jobId}`);
     
+    const targetUrl = job.input_params.target_url;
+    if (!targetUrl) throw new Error(`Missing target_url in input_params for Job ${jobId}`);
+
+    // Reporting State
+    await this.db.logEvent({
+      job_id: jobId,
+      event_type: 'CAPABILITY_START',
+      source: 'CapExtr',
+      message: `Starting extraction for ${targetUrl}`
+    });
+
+    await this.db.updateJobStatus(jobId, 'running');
+
     let extractedData;
+    let confidence = 1.0;
     let success = true;
 
     try {
-        // Mock Implementation for demonstration and architectural connectivity
-        // const browser = await chromium.launch({ proxy: { server: proxyEvent.payload.proxy_id } });
-        // const context = await browser.newContext();
-        // const page = await context.newPage();
-        // await page.goto(url);
-        // extractedData = await page.evaluate(new Function(script) as any);
-        // await browser.close();
-        
-        extractedData = { title: "Mocked Extracted Page Title", extract: ["row1 from DOM", "row2 from DOM"] };
-    } catch (e) {
+      // ATTEMPT 1: Primary Extraction (Playwright context)
+      // Simulate failure scenario for self-healing demonstration
+      if (targetUrl.includes("fail")) {
+          throw new Error("Playwright Headless Timeout: Selectors failed to resolve.");
+      }
+      
+      extractedData = { title: "Mocked Extracted Page Title", extract: ["row1 from DOM", "row2 from DOM"] };
+      await this.db.logEvent({ job_id: jobId, event_type: 'EXTRACTION_PROGRESS', source: 'CapExtr', message: "Standard DOM extraction succeeded" });
+      
+    } catch (e: any) {
+      // 2. SELF-HEALING LOGIC
+      await this.db.logEvent({ job_id: jobId, event_type: 'NAVIGATION_ERROR', source: 'CapExtr', message: `Playwright failed: ${e.message}` });
+      await this.db.logEvent({ job_id: jobId, event_type: 'SELF_HEALING_START', source: 'CapExtr', message: "Attempting LLM heuristic text re-mapping" });
+      
+      try {
+        // Fallback Logic (e.g. Gemini LLM parsing raw markdown wrapper)
+        extractedData = { title: "Heuristic Fallback Title", extract: ["LLM derived row1"] };
+        confidence = 0.70; // Penalize confidence for HITL awareness
+        await this.db.logEvent({ job_id: jobId, event_type: 'SELF_HEALING_COMPLETED', source: 'CapExtr', message: "Fallback extraction succeeded" });
+        success = true;
+      } catch (fallbackError: any) {
         success = false;
-        console.error(`[CapExtr] Playwright execution failed`, e);
+        await this.db.updateJobStatus(jobId, 'hitl_alert');
+        await this.db.logEvent({ job_id: jobId, event_type: 'CAPABILITY_ERROR', source: 'CapExtr', message: `Self-healing completely failed: ${fallbackError.message}` });
+      }
     }
 
-    if (success) {
-      await this.store.publishEvent({
-        event_name: 'extraction_completed',
-        source_agent_run_id: proxyEvent.source_agent_run_id,
-        entity_id: proxyEvent.entity_id,
-        payload: {
-          extracted_data: extractedData,
-          schema_version: "1.0",
-          source_url: url
-        },
-        confidence_score: 0.90, // Baseline execution integrity rating
-        justification: "Playwright extraction executed target JS scripts successfully."
+    if (success && extractedData) {
+      // 3. Saving Results to extracted_data
+      await this.db.saveExtractedData({
+        job_id: jobId,
+        source_url: targetUrl,
+        content: extractedData,
+        confidence: confidence,
+        is_validated: false // Requires CapQA validation
       });
-    } else {
-      await this.store.publishEvent({
-        event_name: 'extraction_failed',
-        source_agent_run_id: proxyEvent.source_agent_run_id,
-        entity_id: proxyEvent.entity_id,
-        payload: { error_reason: "Browser timeout or proxy authentication failed" },
-        confidence_score: 0.0,
-        justification: "Fatal error inside Playwright headless context."
-      });
+
+      // Update final state so Router knows it's free
+      await this.db.updateJobStatus(jobId, 'completed');
+      await this.db.logEvent({ job_id: jobId, event_type: 'CAPABILITY_COMPLETE', source: 'CapExtr', message: "Extraction capability shut down successfully." });
     }
   }
 }
