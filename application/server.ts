@@ -1,9 +1,13 @@
 import express from "express";
+import path from "path";
 import cors from "cors";
 import dotenv from "dotenv";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./swagger.json";
 import { v4 as uuidv4 } from "uuid";
+import { JobRequestSchema } from "./src/module_1/schema";
+import { OrchestratorRouter } from "./src/orchestrator/router";
+import { ValidatedInputEvent } from "../world_model/schema";
 
 const SYSTEM_PROMPT = `
 You are the "Input Contract Module" (Module 1) for an Elite Web Scraping framework. 
@@ -24,26 +28,27 @@ RULE 2: If the target domain IS clear and sufficient context exists, you MUST ou
     // A dynamic key-value map. Example: "origin": "Delhi", "destination": "Detroit", "date": "coming saturday"
   },
   "intent_context": "string (Plain text summary of their goal)",
-  "constraints": {
-    "max_time_ms": 120000,
-    "requires_js_rendering": true,
-    "human_in_loop_required": false,
-    "proxy_tier": "string (datacenter | residential | isp) based on site difficulty",
-    "anti_bot_risk": "string (low | medium | high) based on site defense",
-    "authentication_required": false
-  },
-  "expected_schema": {
+    "constraints": {
+      "max_time_ms": 120000,
+      "requires_js_rendering": true,
+      "human_in_loop_required": false,
+      "proxy_tier": "string (datacenter | residential | mobile | unknown) based on site difficulty",
+      "anti_bot_risk": "string (low | medium | high | unknown) based on site defense",
+      "authentication_required": false
+    },
+    "expected_schema": {
     "column_name": "datatype"
   }
 }
 DO NOT output conversational text, markdown blocks, or anything outside of the JSON object.
 `;
 
-// Initialize environment variables from .env file
-dotenv.config();
+// Initialize environment variables from .env file (now located in project root)
+dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const orchestratorRouter = new OrchestratorRouter();
 
 // Middleware
 app.use(cors());
@@ -115,33 +120,47 @@ app.post("/api/v1/intake", async (req, res) => {
             return res.status(200).json(parsedPayload);
         }
 
-        // Step 4: Event Constructor & Validation (Module 2 Wrapping)
+        // Step 4: Validate and normalize the Module 1 payload for the intelligence layer
+        const validatedPayload = JobRequestSchema.parse(parsedPayload);
         const eventId = `req-${uuidv4().substring(0,8)}`;
-        const finalWorldModelEvent = {
+        const normalizedConstraints: ValidatedInputEvent["payload"]["constraints"] = {
+            requires_js_rendering: validatedPayload.constraints.requires_js_rendering,
+            human_in_loop_required: validatedPayload.constraints.human_in_loop_required,
+            proxy_tier: validatedPayload.constraints.proxy_tier,
+            anti_bot_risk: validatedPayload.constraints.anti_bot_risk,
+            authentication_required: validatedPayload.constraints.authentication_required
+        };
+
+        if (validatedPayload.constraints.max_time_ms !== undefined) {
+            normalizedConstraints.max_time_ms = validatedPayload.constraints.max_time_ms;
+        }
+
+        const finalWorldModelEvent: ValidatedInputEvent = {
             event_id: eventId,
             event_type: "INPUT_CONTRACT_VALIDATED",
             timestamp: new Date().toISOString(),
-            payload: parsedPayload,
+            payload: {
+                target: {
+                    url_or_domain: validatedPayload.target.url_or_domain,
+                    scope: validatedPayload.target.scope
+                },
+                search_parameters: validatedPayload.search_parameters ?? {},
+                intent_context: validatedPayload.intent_context ?? "",
+                constraints: normalizedConstraints,
+                expected_schema: validatedPayload.expected_schema ?? {}
+            },
             confidence_score: 1.0,
             justification: "Requirement conversationally processed and structured via LLM Server."
         };
 
-        // Step 5: Webhook Dispatch to Module 2
-        /*
-        // Here is how you push to Module 2 in production:
-        try {
-            await fetch("http://module-2/api/events", {
-                method: "POST",
-                body: JSON.stringify(finalWorldModelEvent)
-            });
-            console.log("Successfully pushed to Module 2!");
-        } catch (targetErr) {
-            console.error("Module 2 is offline, but JSON is structured correctly.");
-        }
-        */
+        // Step 5: Hand the validated Module 1 event to the intelligence layer
+        const routingDecision = await orchestratorRouter.handleEvent(finalWorldModelEvent);
 
-        // Return the final payload for manual checking in Swagger Docs or custom UI
-        return res.status(200).json(finalWorldModelEvent);
+        // Return both the Module 1 event and the intelligence routing decision
+        return res.status(200).json({
+            module_1_event: finalWorldModelEvent,
+            routing_decision: routingDecision
+        });
 
     } catch (err) {
         console.error(err);

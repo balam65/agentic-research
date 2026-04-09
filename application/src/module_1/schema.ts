@@ -10,8 +10,8 @@ export const JobRequestSchema = z.object({
     max_time_ms: z.number().int().positive().optional(),
     requires_js_rendering: z.boolean().default(false),
     human_in_loop_required: z.boolean().default(false),
-    proxy_tier: z.enum(["datacenter", "residential", "isp"]).default("datacenter").describe("Tier of proxy needed based on target difficulty."),
-    anti_bot_risk: z.enum(["low", "medium", "high"]).default("low").describe("Estimated anti-bot complexity of target domain."),
+    proxy_tier: z.enum(["datacenter", "residential", "mobile", "unknown"]).default("datacenter").describe("Tier of proxy needed based on target difficulty."),
+    anti_bot_risk: z.enum(["low", "medium", "high", "unknown"]).default("low").describe("Estimated anti-bot complexity of target domain."),
     authentication_required: z.boolean().default(false).describe("Whether target domain inherently requires a login session (e.g. LinkedIn).")
   }).default({}),
   search_parameters: z.record(z.string(), z.string()).optional().describe("Dynamic parameters the webscraper needs to inject or search for."),
