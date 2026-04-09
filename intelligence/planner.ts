@@ -9,7 +9,7 @@ export interface CapabilityDecision {
 }
 
 export class DynamicPlanner {
-  async chooseNext(world: WorldView, capabilities: CapabilityModule[]): Promise<CapabilityDecision | null> {
+  async scoreCapabilities(world: WorldView, capabilities: CapabilityModule[]): Promise<CapabilityDecision[]> {
     const awareness = new SituationalAwareness(world);
     const missingGoals = awareness.getMissingGoalArtifacts();
 
@@ -25,10 +25,20 @@ export class DynamicPlanner {
       }),
     );
 
-    const viable = scored
+    return scored
       .filter((entry) => entry.score > 0)
-      .sort((left, right) => right.score - left.score);
+      .sort((left, right) => right.score - left.score)
+      .map((entry) => ({
+        capability: entry.capability,
+        score: entry.score,
+        rationale: `Planner scored '${entry.capability.descriptor.id}' at ${entry.score.toFixed(2)} with missing goals: ${missingGoals.join(', ') || 'none'}.`,
+      }));
+  }
 
+  async chooseNext(world: WorldView, capabilities: CapabilityModule[]): Promise<CapabilityDecision | null> {
+    const awareness = new SituationalAwareness(world);
+    const missingGoals = awareness.getMissingGoalArtifacts();
+    const viable = await this.scoreCapabilities(world, capabilities);
     if (viable.length === 0) {
       return null;
     }

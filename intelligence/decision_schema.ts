@@ -5,6 +5,7 @@ export interface AgentDecision {
   stop_execution: boolean;
   confidence: number;
   missing_information: string[];
+  requested_next_event?: string;
 }
 
 export function parseAgentDecision(raw: string): AgentDecision {

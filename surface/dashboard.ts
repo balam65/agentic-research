@@ -6,6 +6,9 @@ export interface DashboardSnapshot {
     status: string;
     outputGoal: string[];
     latestIntelligenceDecision: string | null;
+    latestRoutingEvent: string | null;
+    pendingStages: string[];
+    completedStages: string[];
   }>;
   kpis: {
     totalTasks: number;
@@ -20,9 +23,13 @@ export function buildDashboardSnapshot(store: WorldModelStore): DashboardSnapsho
   return {
     tasks: tasks.map((task) => {
       const world = store.getWorldView(task.id);
+      const workflowState = store.getWorkflowState(task.id);
       const latestDecision = [...world.events]
         .reverse()
         .find((event) => event.type === 'intelligence_decision_recorded');
+      const latestRouting = [...world.events]
+        .reverse()
+        .find((event) => event.type === 'routing_decision_emitted');
 
       return {
         id: task.id,
@@ -32,6 +39,12 @@ export function buildDashboardSnapshot(store: WorldModelStore): DashboardSnapsho
           latestDecision?.type === 'intelligence_decision_recorded'
             ? latestDecision.payload.selectedCapabilityId
             : null,
+        latestRoutingEvent:
+          latestRouting?.type === 'routing_decision_emitted'
+            ? latestRouting.payload.next_event
+            : null,
+        pendingStages: workflowState.pendingStages,
+        completedStages: workflowState.completedStages,
       };
     }),
     kpis: {

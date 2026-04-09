@@ -5,6 +5,40 @@ export type TaskStatus =
   | 'completed'
   | 'failed';
 
+export type WorkflowStatus =
+  | 'submitted'
+  | 'in_progress'
+  | 'waiting_for_human'
+  | 'completed'
+  | 'failed'
+  | 'blocked';
+
+export type WorkflowInputEventType = 'INPUT_CONTRACT_VALIDATED';
+
+export type WorkflowDownstreamEventType =
+  | 'DISCOVERY_COMPLETED'
+  | 'DISCOVERY_FAILED'
+  | 'EXTRACTION_COMPLETED'
+  | 'EXTRACTION_FAILED'
+  | 'QA_COMPLETED'
+  | 'QA_FAILED'
+  | 'LOW_CONFIDENCE_DETECTED'
+  | 'HITL_APPROVED'
+  | 'HITL_REJECTED';
+
+export type WorkflowEventType = WorkflowInputEventType | WorkflowDownstreamEventType;
+
+export type RoutingEventType =
+  | 'DISCOVERY_REQUIRED'
+  | 'EXTRACTION_REQUIRED'
+  | 'QA_REQUIRED'
+  | 'RETRY_REQUIRED'
+  | 'HITL_REQUIRED'
+  | 'WORKFLOW_COMPLETED'
+  | 'WORKFLOW_FAILED'
+  | 'NO_ACTION_REQUIRED'
+  | 'CAPABILITY_EXECUTION_REQUIRED';
+
 export type ArtifactKind =
   | 'intent_profile'
   | 'candidate_targets'
@@ -22,6 +56,8 @@ export interface NonNegotiableInput {
   constraints: {
     maxRecords?: number;
     budgetUsd?: number;
+    maxTimeMs?: number;
+    requiresJsRendering?: boolean;
     deliveryMode?: 'webhook' | 's3' | 'sftp' | 'database';
     humanReviewAllowed?: boolean;
   };
@@ -46,6 +82,74 @@ export interface TaskRecord {
   governance: {
     humanReviewRequired: boolean;
   };
+}
+
+export interface ValidatedInputEvent {
+  event_id: string;
+  event_type: WorkflowInputEventType;
+  timestamp: string;
+  payload: {
+    target: {
+      url_or_domain: string;
+      scope: string;
+    };
+    constraints: {
+      max_budget?: number;
+      max_time_ms?: number;
+      requires_js_rendering?: boolean;
+      human_in_loop_required?: boolean;
+    };
+    expected_schema: Record<string, string>;
+  };
+  confidence_score: number;
+  justification: string;
+}
+
+export interface DownstreamWorkflowEvent {
+  event_id: string;
+  workflow_id: string;
+  event_type: WorkflowDownstreamEventType;
+  timestamp: string;
+  payload: {
+    module?: string;
+    stage?: string;
+    reason?: string;
+    artifacts?: Array<Omit<ArtifactRecord, 'id' | 'taskId' | 'createdAt'>>;
+    metrics?: Array<Omit<MetricRecord, 'id' | 'taskId' | 'createdAt'>>;
+    metadata?: Record<string, unknown>;
+  };
+  confidence_score?: number;
+  justification: string;
+}
+
+export type WorkflowEventInput = ValidatedInputEvent | DownstreamWorkflowEvent;
+
+export interface RoutingDecision {
+  workflow_id: string;
+  next_event: RoutingEventType;
+  target_module: string | null;
+  status: WorkflowStatus;
+  reasoning: string;
+  requires_human_review: boolean;
+  confidence: number;
+  decided_at: string;
+}
+
+export interface WorkflowState {
+  workflowId: string;
+  currentStatus: WorkflowStatus;
+  completedStages: string[];
+  pendingStages: string[];
+  failedStages: string[];
+  routingHistory: RoutingDecision[];
+  confidenceHistory: number[];
+  decisionHistory: Array<{
+    timestamp: string;
+    summary: string;
+  }>;
+  justifications: string[];
+  retryCount: number;
+  lastUpdatedAt: string;
 }
 
 export interface ArtifactRecord {
@@ -140,6 +244,20 @@ export type WorldEvent =
       taskId: string;
       createdAt: string;
       payload: { status: TaskStatus; reason: string };
+    }
+  | {
+      id: string;
+      type: 'workflow_event_received';
+      taskId: string;
+      createdAt: string;
+      payload: WorkflowEventInput;
+    }
+  | {
+      id: string;
+      type: 'routing_decision_emitted';
+      taskId: string;
+      createdAt: string;
+      payload: RoutingDecision;
     };
 
 export interface WorldView {

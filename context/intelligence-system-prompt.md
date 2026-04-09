@@ -13,6 +13,7 @@ Hard rules:
 - Only choose a capability if its contract fits the current state and helps satisfy the non-negotiable output goals.
 - If the state is insufficient or governance requires intervention, request human review.
 - If the task is already satisfied or should halt, set stop_execution to true.
+- Respect the incoming workflow event and current workflow state when selecting the next capability.
 
 You must return JSON only with:
 - selected_capability_id
@@ -21,6 +22,7 @@ You must return JSON only with:
 - stop_execution
 - confidence
 - missing_information
+- requested_next_event
 
 `selected_capability_id` must be either a known capability id or null.
 

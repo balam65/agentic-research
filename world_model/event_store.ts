@@ -4,8 +4,11 @@ import {
   ArtifactRecord,
   ErrorRecord,
   MetricRecord,
+  RoutingDecision,
   TaskRecord,
   TaskStatus,
+  WorkflowEventInput,
+  WorkflowState,
   WorldEvent,
   WorldView,
 } from './schema.js';
@@ -20,6 +23,7 @@ export class WorldModelStore {
   private readonly artifacts = new Map<string, ArtifactRecord[]>();
   private readonly metrics = new Map<string, MetricRecord[]>();
   private readonly errors = new Map<string, ErrorRecord[]>();
+  private readonly workflowStates = new Map<string, WorkflowState>();
 
   submitTask(task: Omit<TaskRecord, 'createdAt' | 'updatedAt'>): TaskRecord {
     const record: TaskRecord = {
@@ -35,6 +39,7 @@ export class WorldModelStore {
       createdAt: nowIso(),
       payload: record,
     });
+    this.ensureWorkflowState(record.id);
     return record;
   }
 
@@ -83,6 +88,63 @@ export class WorldModelStore {
       createdAt: nowIso(),
       payload: decision,
     });
+  }
+
+  recordWorkflowEvent(taskId: string, event: WorkflowEventInput): void {
+    this.events.push({
+      id: randomUUID(),
+      type: 'workflow_event_received',
+      taskId,
+      createdAt: nowIso(),
+      payload: event,
+    });
+
+    const state = this.ensureWorkflowState(taskId);
+    const confidence = 'confidence_score' in event ? event.confidence_score : undefined;
+    if (typeof confidence === 'number' && Number.isFinite(confidence)) {
+      state.confidenceHistory.push(Math.max(0, Math.min(1, confidence)));
+    }
+    state.justifications.push(event.justification);
+    state.lastUpdatedAt = nowIso();
+    this.workflowStates.set(taskId, state);
+  }
+
+  recordRoutingDecision(taskId: string, decision: RoutingDecision): void {
+    this.events.push({
+      id: randomUUID(),
+      type: 'routing_decision_emitted',
+      taskId,
+      createdAt: nowIso(),
+      payload: decision,
+    });
+
+    const state = this.ensureWorkflowState(taskId);
+    state.routingHistory.push(decision);
+    state.decisionHistory.push({
+      timestamp: decision.decided_at,
+      summary: `${decision.next_event}${decision.target_module ? ` -> ${decision.target_module}` : ''}`,
+    });
+    state.currentStatus = decision.status;
+    state.lastUpdatedAt = nowIso();
+    this.workflowStates.set(taskId, state);
+  }
+
+  getWorkflowState(taskId: string): WorkflowState {
+    return { ...this.ensureWorkflowState(taskId) };
+  }
+
+  updateWorkflowState(
+    taskId: string,
+    mutator: (current: WorkflowState) => WorkflowState,
+  ): WorkflowState {
+    const next = mutator(this.ensureWorkflowState(taskId));
+    next.lastUpdatedAt = nowIso();
+    this.workflowStates.set(taskId, next);
+    return next;
+  }
+
+  listWorkflowStates(): WorkflowState[] {
+    return Array.from(this.workflowStates.values()).map((state) => ({ ...state }));
   }
 
   recordArtifact(taskId: string, artifact: Omit<ArtifactRecord, 'id' | 'taskId' | 'createdAt'>): ArtifactRecord {
@@ -171,5 +233,37 @@ export class WorldModelStore {
       throw new Error(`Unknown task '${taskId}'`);
     }
     return task;
+  }
+
+  private ensureWorkflowState(taskId: string): WorkflowState {
+    const existing = this.workflowStates.get(taskId);
+    if (existing) {
+      return {
+        ...existing,
+        completedStages: [...existing.completedStages],
+        pendingStages: [...existing.pendingStages],
+        failedStages: [...existing.failedStages],
+        routingHistory: [...existing.routingHistory],
+        confidenceHistory: [...existing.confidenceHistory],
+        decisionHistory: [...existing.decisionHistory],
+        justifications: [...existing.justifications],
+      };
+    }
+
+    const created: WorkflowState = {
+      workflowId: taskId,
+      currentStatus: 'submitted',
+      completedStages: [],
+      pendingStages: [],
+      failedStages: [],
+      routingHistory: [],
+      confidenceHistory: [],
+      decisionHistory: [],
+      justifications: [],
+      retryCount: 0,
+      lastUpdatedAt: nowIso(),
+    };
+    this.workflowStates.set(taskId, created);
+    return { ...created };
   }
 }

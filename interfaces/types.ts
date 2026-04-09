@@ -1,4 +1,4 @@
-import { NonNegotiableInput, NonNegotiableOutput } from '../world_model/schema.js';
+import { RoutingDecision, WorkflowEventInput } from '../world_model/schema.js';
 
-export type AgenticRequest = NonNegotiableInput;
-export type AgenticResponse = NonNegotiableOutput;
+export type AgenticRequest = WorkflowEventInput;
+export type AgenticResponse = RoutingDecision;
