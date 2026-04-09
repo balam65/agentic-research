@@ -1,7 +1,7 @@
 # Phase 1: Scheduling & Triggering Implementation
 
 ## Overview (Human Review)
-- **What this phase accomplishes:** Builds the Scheduling Agent responsible for queueing the `research_brief` payloads against SLA priorities and resource availability, dispatching them to the Onboarding Phase.
+- **What this phase accomplishes:** Builds the Scheduling Agent responsible for queueing the `research_brief` payloads against SLA priorities and resource availability, preparing and validating execution inputs, and dispatching them to the Onboarding Phase.
 - **Key design decisions and trade-offs:** Decoupling scheduling from Master Orchestration ensures complex SLA math and cron-job execution doesn't block the Master loop.
 - **Prerequisites and outputs:**
   - *Prerequisites:* 03-assessment-interrogation.md completed.
@@ -15,10 +15,11 @@
 **Artifacts to produce:**
 - `agentic-research/agents/scheduling/queue_manager.py`
 **Instruction:**
-> Implement `queue_manager.py`. Create logic to ingest a newly created `research_brief`. Assign an SLA threshold based on the `user_intent` field (e.g., 'Crisis Analysis' = 1 hour, 'Market Overview' = 24 hours). Insert the job into the Master Agent's `job_runs` table with the calculated priority score.
+> Implement `queue_manager.py`. Create logic to ingest a newly created `research_brief`. Assign an SLA threshold based on the `user_intent` field (e.g., 'Crisis Analysis' = 1 hour, 'Market Overview' = 24 hours). Structure the generated inputs into the execution-ready format expected by downstream agents, validate that required fields and schedule windows are complete, and insert the job into the Master Agent's `job_runs` table with the calculated priority score.
 **Acceptance criteria:**
 - Priority logic successfully differentiates time-sensitive tasks.
 - Database insert executes properly.
+- Input payloads are validated for completeness before dispatch eligibility.
 
 ### Step 2: Dispatch Trigger System
 **Objective:** Trigger downstream agents when resources allow.

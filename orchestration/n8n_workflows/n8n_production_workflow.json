@@ -1,0 +1,358 @@
+{
+  "name": "Phase 3: Production & Data Capture",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "subworkflow-trigger",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        380,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Load proxy_handler.js contents\nconst rotateConfig = require('./utils/proxy_handler.js');\nreturn rotateConfig;"
+      },
+      "id": "proxy-rotator",
+      "name": "Code: Proxy Rotator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        620,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $node[\"When Executed by Another Workflow\"].json[\"source_type\"] }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "SPA",
+              "output": 1
+            },
+            {
+              "value2": "Static HTML",
+              "output": 0
+            }
+          ]
+        }
+      },
+      "id": "source-type-router",
+      "name": "Switch: Source Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        860,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $node[\"When Executed by Another Workflow\"].json[\"target_url\"] }}",
+        "options": {
+          "proxy": "= {{ $node[\"Code: Proxy Rotator\"].json[\"proxy\"] }}",
+          "headers": "= {{ $node[\"Code: Proxy Rotator\"].json[\"headers\"] }}"
+        }
+      },
+      "id": "static-extractor",
+      "name": "HTTP: Static Extractions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1100,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "action": "goto",
+        "url": "={{ $node[\"When Executed by Another Workflow\"].json[\"target_url\"] }}",
+        "options": {
+          "stealth": true,
+          "proxy": "= {{ $node[\"Code: Proxy Rotator\"].json[\"proxy\"] }}"
+        }
+      },
+      "id": "playwright-extractor",
+      "name": "Browser: Playwright Node",
+      "type": "n8n-nodes-base.playwright",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Using the raw extraction payload {{ $json }} and selectors {{ $node[\"When Executed by Another Workflow\"].json[\"selectors\"] }}, map the requested fields {{ $node[\"When Executed by Another Workflow\"].json[\"topic_list\"] }} and return success plus extracted data.",
+        "options": {}
+      },
+      "id": "map-results-agent",
+      "name": "AI Agent: Map Results",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.2,
+      "position": [
+        1360,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $node[\"AI Agent: Map Results\"].json[\"success\"] }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "extraction-success-gate",
+      "name": "If: Extraction Successful?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = items[0];\nconst retryCount = Number(item.json.retry_count ?? 0) + 1;\nconst maxRetries = Number(item.json.max_retries ?? 3);\nreturn [{ json: { ...item.json, retry_count: retryCount, max_retries: maxRetries } }];"
+      },
+      "id": "retry-controller",
+      "name": "Code: Retry Controller",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ Number($json.retry_count) < Number($json.max_retries) }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "retry-budget-gate",
+      "name": "If: Retry Remaining?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2080,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "backoff-wait",
+      "name": "Wait: Exponential Backoff",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        2320,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map((item) => ({\n  json: {\n    ...item.json,\n    trigger_event: 'break_detected',\n    handoff_reason: 'retry_budget_exhausted',\n    failure_stage: 'production_capture'\n  }\n}));"
+      },
+      "id": "prepare-break-handoff",
+      "name": "Code: Prepare Break Handoff",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        2320,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "phase-4-transformation",
+        "mode": "each"
+      },
+      "id": "transform-trigger",
+      "name": "Execute: Phase 4 Transform",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "master-orchestration",
+        "mode": "each"
+      },
+      "id": "master-reentry",
+      "name": "Execute: Master Orchestration",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        2560,
+        560
+      ]
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Code: Proxy Rotator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Proxy Rotator": {
+      "main": [
+        [
+          {
+            "node": "Switch: Source Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Source Type": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Static Extractions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Browser: Playwright Node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Static Extractions": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Map Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Browser: Playwright Node": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Map Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: Map Results": {
+      "main": [
+        [
+          {
+            "node": "If: Extraction Successful?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Extraction Successful?": {
+      "main": [
+        [
+          {
+            "node": "Execute: Phase 4 Transform",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code: Retry Controller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Retry Controller": {
+      "main": [
+        [
+          {
+            "node": "If: Retry Remaining?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Retry Remaining?": {
+      "main": [
+        [
+          {
+            "node": "Wait: Exponential Backoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code: Prepare Break Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait: Exponential Backoff": {
+      "main": [
+        [
+          {
+            "node": "Code: Proxy Rotator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Prepare Break Handoff": {
+      "main": [
+        [
+          {
+            "node": "Execute: Master Orchestration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

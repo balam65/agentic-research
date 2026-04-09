@@ -1,0 +1,399 @@
+{
+  "name": "Master Research Orchestration",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "research-request",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook: Ingestion",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        300,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "subworkflow-trigger",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        300,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = items[0].json.body ?? items[0].json;\nreturn [{\n  json: {\n    ...payload,\n    trigger_event: payload.trigger_event ?? 'initial_request',\n    brief: payload.brief ?? payload.research_brief ?? payload.intent,\n    domain_name: payload.domain_name ?? payload.domain ?? null,\n    source_type: payload.source_type ?? 'Static HTML',\n    max_retries: payload.max_retries ?? 3\n  }\n}];"
+      },
+      "id": "normalize-trigger-payload",
+      "name": "Code: Normalize Trigger Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        560,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.trigger_event }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "initial_request",
+              "output": 0
+            },
+            {
+              "value2": "drift_detected",
+              "output": 1
+            },
+            {
+              "value2": "break_detected",
+              "output": 2
+            },
+            {
+              "value2": "next_scheduled_run",
+              "output": 3
+            }
+          ]
+        }
+      },
+      "id": "event-router",
+      "name": "Switch: Orchestration Event",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        800,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Apply compliance and PII rules to the incoming request before any research actions begin: {{ $json }}.",
+        "options": {}
+      },
+      "id": "compliance-agent",
+      "name": "AI Agent: Compliance",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Analyze the incoming research request and produce the normalized research brief, target domain, and confidence score: {{ $json }}.",
+        "options": {}
+      },
+      "id": "assessment-agent",
+      "name": "AI Agent: Assessment",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.2,
+      "position": [
+        1280,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "job_runs",
+        "columns": [
+          "intent_hash",
+          "client_id",
+          "current_status",
+          "research_brief"
+        ]
+      },
+      "id": "postgres-insert",
+      "name": "Postgres: Create Job",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $node[\"AI Agent: Assessment\"].json[\"confidence\"] > 0.7 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "confidence-gate",
+      "name": "If: Confidence High?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Calculate SLA, queue placement, and retry budget for this orchestration payload: {{ $json }}.",
+        "options": {}
+      },
+      "id": "scheduling-agent",
+      "name": "AI Agent: Scheduling",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.2,
+      "position": [
+        1280,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "source_registry",
+        "where": {
+          "domain_name": "={{ $json.domain_name || $node[\"AI Agent: Assessment\"].json[\"domain_name\"] }}"
+        }
+      },
+      "id": "postgres-script-check",
+      "name": "Postgres: Script Availability Check",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $node[\"Postgres: Script Availability Check\"].json[\"is_known\"] === true && !!$node[\"Postgres: Script Availability Check\"].json[\"css_selectors\"] }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "script-available-gate",
+      "name": "If: Script Available?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "discovery-subworkflow",
+        "mode": "each"
+      },
+      "id": "discovery-trigger",
+      "name": "Execute: Phase 2 Discovery",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        2020,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "phase-3-production",
+        "mode": "each"
+      },
+      "id": "production-trigger",
+      "name": "Execute: Phase 3 Production",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        2020,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "support-channel",
+        "text": "=Low confidence on request {{ $json.intent_hash || $json.client_id || 'unknown' }}. Human review required before discovery."
+      },
+      "id": "slack-alert",
+      "name": "Slack: HITL Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        2020,
+        120
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook: Ingestion": {
+      "main": [
+        [
+          {
+            "node": "Code: Normalize Trigger Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Code: Normalize Trigger Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Normalize Trigger Payload": {
+      "main": [
+        [
+          {
+            "node": "Switch: Orchestration Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Orchestration Event": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Compliance",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent: Scheduling",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute: Phase 2 Discovery",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute: Phase 3 Production",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: Compliance": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: Assessment": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Create Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres: Create Job": {
+      "main": [
+        [
+          {
+            "node": "If: Confidence High?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Confidence High?": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Scheduling",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack: HITL Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: Scheduling": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Script Availability Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres: Script Availability Check": {
+      "main": [
+        [
+          {
+            "node": "If: Script Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Script Available?": {
+      "main": [
+        [
+          {
+            "node": "Execute: Phase 3 Production",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute: Phase 2 Discovery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

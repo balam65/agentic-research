@@ -1,0 +1,48 @@
+Initial mail
+
+Hi Justin,
+This work is primarily based on the document “Travel Production Process – Agentic Framework” shared by Pearline (link to doc.).
+
+Using that as a guiding reference, I am working on designing a generic multi-agent framework capable of handling the entire web data aggregation lifecycle—from requirement ingestion through to final delivery, including all intermediate stages.
+
+As a starting point, I used the Agentic OS project (currently under development for the e-commerce domain) as a template. I am aware of parallel initiatives underway, and my goal is to explore how these efforts can be aligned and synergized effectively.
+
+Please let me know a convenient time to call so I can explain in more detail.
+
+Regards
+
+Bala
+
+Response 1 from receiver-
+
+Thanks Bala. Copying Pearline in, who shared this view with me.
+It would be good to get an understanding of how these two documents relate? (e.g. different initiatives, different takes on the same initiative, etc.)
+
+Thanks!
+
+Response 1 from sender
+
+Hi Justin,
+This work is primarily based on the document “Travel Production Process – Agentic Framework” shared by Pearline (link to doc.).
+
+Using that as a guiding reference, I am working on designing a generic multi-agent framework capable of handling the entire web data aggregation lifecycle—from requirement ingestion through to final delivery, including all intermediate stages.
+
+As a starting point, I used the Agentic OS project (currently under development for the e-commerce domain) as a template. I am aware of parallel initiatives underway, and my goal is to explore how these efforts can be aligned and synergized effectively.
+
+Please let me know a convenient time to call so I can explain in more detail.
+
+Regards
+
+Bala
+
+Response 2 from receiver
+
+Hey Both. Thanks for the additional context Bala - Pearline also separately explained how this is an extension of that work.
+
+Please find a slot in my calendar at your convenience.
+
+Moving towards a maximally agentic paradigm, my most immediate suggestion would be to start by specifying things in terms of only non-negotiable inputs and outputs, rather than in terms of process flow. This *might* include seemingly "intermediate" outputs, but only if they have indispensible value in their own right.
+
+So, for example, it's worth considering whether "structured research brief" is a necessary fundamental output: if you're mandating that you want human oversight injected at that point, then it may well be; but if it exists only to encourage the agent to approach things in a structured way, then it shouldn't be part of the top-level specification. You can always layer on additional recommended structure (and some of this may end up getting promoted to mandated structure). but its important to start by clearly outlining the absolute non-negotiables.
+
+There's a parallel here that you will appreciate with feature engineering in data science and machine learning: we want to keep the feature engineering to an absolute minimum, and give the AI the opportunity to do as much of the work as possible. If we find that it struggles to give us what we want, then we can "nudge" it by injecting some additional inductive biases.

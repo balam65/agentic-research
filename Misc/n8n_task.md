@@ -1,0 +1,32 @@
+- [x] Initialize Orchestration Structure
+  - [x] Create `orchestration/state_management.sql` for PostgreSQL/Supabase.
+  - [x] Create `orchestration/n8n_master_workflow.json` (Template).
+- [x] Implement Phase 0-1 Core Logic
+  - [x] Extract Agent System Prompts for Assessment & Master Agent.
+  - [x] Scaffold the Master Agent Node in n8n JSON.
+  - [x] Scaffold the Ingestion Webhook.
+- [x] Implement Phase 2: Deep Research & Onboarding
+  - [x] Update `orchestration/state_management.sql` for script storage.
+  - [x] Create `orchestration/prompts/discovery_agent.txt`.
+  - [x] Create `orchestration/prompts/sme_agent.txt`.
+  - [x] Create `orchestration/prompts/scripting_agent.txt`.
+  - [x] Generate `orchestration/n8n_discovery_workflow.json` (Sub-workflow).
+- [x] Implement Phase 3: Production & Data Capture
+  - [x] Create `orchestration/prompts/extraction_agent.txt`.
+  - [x] Create `orchestration/prompts/production_agent.txt`.
+  - [x] Generate `orchestration/n8n_production_workflow.json`.
+  - [x] Create `orchestration/utils/proxy_handler.js`.
+- [x] Implement Phase 4: Transformation & Validation
+  - [x] Create `orchestration/prompts/transformation_agent.txt`.
+  - [x] Create `orchestration/prompts/qa_agent.txt`.
+  - [x] Generate `orchestration/n8n_transformation_workflow.json`.
+  - [x] Create `orchestration/utils/data_normalizer.js`.
+- [x] Implement Phase 5: Delivery, Support & Monitoring
+  - [x] Create `orchestration/prompts/delivery_agent.txt`.
+  - [x] Create `orchestration/prompts/sentinel_agent.txt`.
+  - [x] Create `orchestration/prompts/support_agent.txt`.
+  - [x] Generate `orchestration/n8n_delivery_workflow.json`.
+  - [x] Create `orchestration/utils/export_packager.js`.
+- [x] Verification & Handoff
+  - [x] Validate JSON syntax for all workflows.
+  - [x] Complete final Walkthrough.

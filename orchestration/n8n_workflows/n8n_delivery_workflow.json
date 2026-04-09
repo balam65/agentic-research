@@ -1,0 +1,447 @@
+{
+  "name": "Phase 5: Delivery, Support & Monitoring",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "subworkflow-trigger",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        380,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Load export_packager.js contents\nconst packager = require('./utils/export_packager.js');\nreturn packager(items);"
+      },
+      "id": "export-packager",
+      "name": "Code: Export Packager",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        620,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $node[\"When Executed by Another Workflow\"].json[\"delivery_method\"] }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "SFTP",
+              "output": 0
+            },
+            {
+              "value2": "S3",
+              "output": 1
+            },
+            {
+              "value2": "API",
+              "output": 2
+            }
+          ]
+        }
+      },
+      "id": "delivery-router",
+      "name": "Switch: Delivery Method",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        860,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "path": "={{ '/client-drop/' + $json.job_id + '.zip' }}"
+      },
+      "id": "sftp-upload",
+      "name": "SFTP: Final Upload",
+      "type": "n8n-nodes-base.sftp",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucket": "delivery-staging",
+        "path": "={{ $json.job_id + '.zip' }}"
+      },
+      "id": "s3-upload",
+      "name": "S3: Cloud Drop",
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $node[\"When Executed by Another Workflow\"].json[\"callback_url\"] }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "job_id",
+              "value": "={{ $json.job_id }}"
+            }
+          ]
+        }
+      },
+      "id": "api-push",
+      "name": "HTTP: API Push",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1100,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "job_runs",
+        "where": {
+          "job_id": "={{ $node[\"When Executed by Another Workflow\"].json[\"job_id\"] }}"
+        },
+        "columns": [
+          "current_status"
+        ]
+      },
+      "id": "mark-completed",
+      "name": "Postgres: Mark COMPLETED",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "sentinel-schedule",
+      "name": "Schedule: Sentinel Checker",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        380,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "execute",
+        "query": "SELECT job_id, client_id, research_brief FROM job_runs WHERE current_status IN ('EXTRACTION_ACTIVE', 'TRANSFORMATION_ACTIVE', 'QA_ACTIVE') AND last_updated < NOW() - INTERVAL '1 hour';"
+      },
+      "id": "sla-check",
+      "name": "Postgres: SLA Check",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        620,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ !!$json.job_id }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "drift-gate",
+      "name": "If: Drift Detected?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        860,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map((item) => ({\n  json: {\n    ...item.json,\n    trigger_event: 'drift_detected',\n    handoff_reason: 'sentinel_sla_breach'\n  }\n}));"
+      },
+      "id": "prepare-drift-handoff",
+      "name": "Code: Prepare Drift Handoff",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "support-inquiry"
+      },
+      "id": "support-webhook",
+      "name": "Webhook: Support Link",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        380,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Categorize the support inquiry {{ $json.body }}. Return job_id, summary, and trigger_next_run=true only when the client is requesting the next scheduled execution.",
+        "options": {}
+      },
+      "id": "support-agent",
+      "name": "AI Agent: Support Assistant",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.2,
+      "position": [
+        620,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.trigger_next_run === true }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "next-run-gate",
+      "name": "If: Next Scheduled Run?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        860,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map((item) => ({\n  json: {\n    ...item.json,\n    trigger_event: 'next_scheduled_run',\n    handoff_reason: 'support_requested_rerun'\n  }\n}));"
+      },
+      "id": "prepare-rerun-handoff",
+      "name": "Code: Prepare Scheduled Run Handoff",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "master-orchestration",
+        "mode": "each"
+      },
+      "id": "master-reentry",
+      "name": "Execute: Master Orchestration",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        840
+      ]
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Code: Export Packager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Export Packager": {
+      "main": [
+        [
+          {
+            "node": "Switch: Delivery Method",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Delivery Method": {
+      "main": [
+        [
+          {
+            "node": "SFTP: Final Upload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "S3: Cloud Drop",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP: API Push",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SFTP: Final Upload": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Mark COMPLETED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "S3: Cloud Drop": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Mark COMPLETED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: API Push": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Mark COMPLETED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule: Sentinel Checker": {
+      "main": [
+        [
+          {
+            "node": "Postgres: SLA Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres: SLA Check": {
+      "main": [
+        [
+          {
+            "node": "If: Drift Detected?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Drift Detected?": {
+      "main": [
+        [
+          {
+            "node": "Code: Prepare Drift Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Code: Prepare Drift Handoff": {
+      "main": [
+        [
+          {
+            "node": "Execute: Master Orchestration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Support Link": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Support Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: Support Assistant": {
+      "main": [
+        [
+          {
+            "node": "If: Next Scheduled Run?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Next Scheduled Run?": {
+      "main": [
+        [
+          {
+            "node": "Code: Prepare Scheduled Run Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Code: Prepare Scheduled Run Handoff": {
+      "main": [
+        [
+          {
+            "node": "Execute: Master Orchestration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
