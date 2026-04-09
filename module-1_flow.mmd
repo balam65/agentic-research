@@ -1,0 +1,35 @@
+flowchart TD
+    %% Define styles for clarity
+    classDef startEnd fill:#10B981,stroke:#047857,stroke-width:2px,color:white;
+    classDef llmNode fill:#805AD5,stroke:#553C9A,stroke-width:2px,color:white;
+    classDef logicNode fill:#1E293B,stroke:#94A3B8,stroke-width:1px,color:#E2E8F0;
+    classDef outputNode fill:#F59E0B,stroke:#B45309,stroke-width:2px,color:white;
+
+    %% Workflow Steps
+    User([👤 User Prompt<br>Natural Language]):::startEnd -.-> A
+    A["💬 Combine with Chat History"]:::logicNode --> B
+    
+    B{"🧠 LLM Engine<br>System Prompt & Analysis"}:::llmNode
+    
+    B -->|Generates JSON payload| C{"Check Payload Structure:<br>Is Target Defined?"}:::logicNode
+    
+    %% Fallback Loop
+    C -->|No, Target Unknown| D["❌ Missing Critical Info"]:::logicNode
+    D --> E["Extract 'clarifying_question'"]:::logicNode
+    E -.->|Render to UI| User
+    
+    %% Success Path & Profiling
+    C -->|Yes, Target Found| F["✅ Extract Core Intent"]:::logicNode
+    
+    subgraph Profiling ["Intelligent Target Profiling"]
+        F --> G1("Derive `proxy_tier`<br>Residential/ISP/DC"):::logicNode
+        F --> G2("Derive `anti_bot_risk`<br>Low/Medium/High"):::logicNode
+        F --> G3("Derive `expected_schema`<br>Column mapping"):::logicNode
+    end
+    
+    Profiling --> H["Apply Typescript Event Wrappers<br>+ Zod Validation Enforcement"]:::logicNode
+    
+    H --> I("Assign Unique `uuid`<br>and `timestamp`"):::logicNode
+    
+    I --> J(["📦 Emit Event:<br>INPUT_CONTRACT_VALIDATED"]):::outputNode
+    J -.-> Mod2([Module 2:<br>Event Router System]):::startEnd
