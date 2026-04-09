@@ -1,42 +1,6 @@
-// Module 1: Event Router Intake via AI Chat Fallback
+// Module 1 Frontend: Connects to New Local Backend Server
 
-const SYSTEM_PROMPT = `
-You are the "Input Contract Module" (Module 1) for an Elite Web Scraping framework. 
-Your goal is to parse the user's natural language requests and output STRICT JSON describing the constraints and targets for Module 2.
-
-RULE 1: If the user HAS NOT specified a clear target website/domain to scrape (e.g. "Scrape shoes"), you MUST output ONLY a JSON object asking for clarification:
-{
-  "clarifying_question": "string (e.g., 'Which website did you want me to scrape these shoes from?')"
-}
-
-RULE 2: If the target domain IS clear and sufficient context exists, you MUST output the strict Data Payload matching this exact structure:
-{
-  "target": {
-    "url_or_domain": "string (e.g. airindia.com)",
-    "scope": "string (search_results | product_pages | category_pages | entire_site | unknown)"
-  },
-  "search_parameters": {
-    // Dynamic key:value map. Example: "origin": "Delhi", "destination": "Detroit"
-  },
-  "intent_context": "string (Plain text summary of their goal)",
-  "constraints": {
-    "max_time_ms": 120000,
-    "requires_js_rendering": boolean (true if headless browser needed),
-    "human_in_loop_required": boolean (true if they want QA, false default),
-    "proxy_tier": "string (datacenter | residential | isp) based on how hard you think this site is to scrape",
-    "anti_bot_risk": "string (low | medium | high) based on the domain's known anti-bot defense level",
-    "authentication_required": boolean (true if the site requires a login to view the data)
-  },
-  "expected_schema": {
-    // Column map. Example: "price": "number"
-  }
-}
-DO NOT output conversational text, markdown blocks, or anything outside of the JSON object.
-`;
-
-let chatHistory = [
-    { role: "system", content: SYSTEM_PROMPT }
-];
+let chatHistory = [];
 
 const TEMPLATES = {
     flight: "scrape the flight price details of air india , flight from delhi to detroit for coming saturday",
@@ -64,7 +28,6 @@ function renderChatBubble(text, isUser) {
 
 async function simulateLLMModule1() {
     const promptInput = document.getElementById('aiPrompt');
-    const apiKey = document.getElementById('openRouterKey').value;
     const btnText = document.getElementById('btnText');
     const btnLoading = document.getElementById('btnLoading');
     const statusBadge = document.getElementById('statusBadge');
@@ -75,55 +38,44 @@ async function simulateLLMModule1() {
         pushLog("Error: Prompt is empty.", "err");
         return;
     }
-    if (!apiKey) {
-        document.getElementById('apiErrorLog').innerText = "Please provide an OpenRouter API key above.";
-        return;
-    }
 
     document.getElementById('apiErrorLog').innerText = '';
     promptInput.value = ''; // clear input
     renderChatBubble(userText, true);
     
-    // Add to LLM Context
+    // Add to local context
     chatHistory.push({ role: "user", content: userText });
 
     btnText.style.display = 'none';
     btnLoading.style.display = 'inline-block';
     statusBadge.className = "status-badge waiting";
-    statusBadge.innerText = "LLM Processing... 🧠";
-    pushLog("Sending multi-turn context to OpenRouter...", "ok");
+    statusBadge.innerText = "Backend Processing... 🧠";
+    pushLog("Dispatching to http://127.0.0.1:3000/api/v1/intake", "ok");
 
     try {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        const response = await fetch("http://127.0.0.1:3000/api/v1/intake", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${apiKey}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                model: "openai/gpt-4o-mini",
-                messages: chatHistory
-            })
+            body: JSON.stringify({ messages: chatHistory })
         });
 
-        if (!response.ok) throw new Error("API Connection Failed");
-
-        const data = await response.json();
-        const llmContent = data.choices[0].message.content;
-        
-        chatHistory.push({ role: "assistant", content: llmContent });
-
-        let parsedPayload;
-        try {
-            let cleanString = llmContent.replace(/```json/g, '').replace(/```/g, '').trim();
-            parsedPayload = JSON.parse(cleanString);
-        } catch(e) {
-            throw new Error("LLM failed to return valid JSON format.");
+        if (!response.ok) {
+            let errorMsg = `Server returned ${response.status}`;
+            try {
+                const errData = await response.json();
+                errorMsg = errData.error || errorMsg;
+            } catch(e) {}
+            throw new Error(errorMsg);
         }
 
-        // Checking for Rule 1: Clarifying Question Fallback
+        const parsedPayload = await response.json();
+        
+        // If the backend returns a Clarifying Question payload
         if (parsedPayload.clarifying_question) {
-            pushLog("LLM deemed target unknown. Firing conversational fallback.", "warn");
+            pushLog("Backend deemed target unknown. Asking in UI.", "warn");
+            chatHistory.push({ role: "assistant", content: parsedPayload.clarifying_question });
             renderChatBubble(parsedPayload.clarifying_question, false);
             
             statusBadge.className = "status-badge waiting";
@@ -132,28 +84,18 @@ async function simulateLLMModule1() {
             return; 
         }
 
-        // Must be Rule 2: Complete Payload
-        pushLog("LLM intelligently profiled target and structured JSON.", "ok");
-        
-        const eventId = `req-${uuid.v4().substring(0,8)}`;
-        const outputEvent = {
-            event_id: eventId,
-            event_type: "INPUT_CONTRACT_VALIDATED",
-            timestamp: new Date().toISOString(),
-            payload: parsedPayload,
-            confidence_score: 1.0,
-            justification: "Requirement conversationally processed and structured via LLM Intake Gateway."
-        };
+        // Full Handoff Payload received!
+        pushLog("Backend successfully created Validated Event.", "ok");
         
         statusBadge.className = "status-badge success";
         statusBadge.innerText = "Validation Passed! ✓";
         
-        jsonOutput.innerHTML = syntaxHighlight(outputEvent);
+        jsonOutput.innerHTML = syntaxHighlight(parsedPayload);
 
     } catch (err) {
         statusBadge.className = "status-badge error";
-        statusBadge.innerText = "Processing Failed! ✕";
-        jsonOutput.innerText = "// ERROR: " + err.message;
+        statusBadge.innerText = "Server Error ✕";
+        jsonOutput.innerText = "// ERROR: " + err.message + "\n\nMake sure application/server.ts is running!";
         pushLog("Error: " + err.message, "err");
     } finally {
         btnText.style.display = 'block';

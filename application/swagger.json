@@ -1,0 +1,55 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Module 1: Intake Gateway API",
+    "version": "1.0.0",
+    "description": "API Gateway converting Natural Language to Strict Agentic Scraping JSON structures."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Testing Server"
+    }
+  ],
+  "paths": {
+    "/api/v1/intake": {
+      "post": {
+        "summary": "Process unstructured prompt into structured Module 2 Payload",
+        "description": "Submit a conversational prompt describing your scraping targets.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "messages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "example": "user"
+                        },
+                        "content": {
+                          "type": "string",
+                          "example": "Scrape flights from delhi to detroit on airindia.com"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful extraction. Returns either a clarifying_question or a full INPUT_CONTRACT_VALIDATED JSON schema."
+          }
+        }
+      }
+    }
+  }
+}

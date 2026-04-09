@@ -19,9 +19,9 @@
                 <p>Type your scraping request in plain English. The LLM will automatically extract targets, rules, and generate the schema!</p>
             </header>
 
-            <div class="api-config">
-                <label>OpenRouter API Key (Required for testing)</label>
-                <input type="password" id="openRouterKey" placeholder="sk-or-v1-..." />
+            <div class="api-config" style="display: none;">
+                <!-- Security Update: Key processing moved to Backend -->
+                <input type="hidden" id="openRouterKey" value="backend-managed" />
             </div>
 
             <section class="templates">
