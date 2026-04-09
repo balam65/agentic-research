@@ -1,15 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-dark-900 text-slate-100 antialiased overflow-x-hidden;
+  html {
+    font-size: 16px; /* Base size — all rem units scale from this */
   }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    @apply text-slate-100 antialiased overflow-x-hidden;
+    background:
+      radial-gradient(ellipse at 15% 15%, rgba(37, 99, 235, 0.12) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 85%, rgba(124, 58, 237, 0.07) 0%, transparent 55%),
+      #060d1a;
+    min-height: 100vh;
+  }
+
+  /* Force monospace for all code/pre/mono elements */
+  .font-mono, code, pre {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+  }
+
+  /* Thin dark scrollbars */
+  * { scrollbar-width: thin; scrollbar-color: rgba(51,65,85,0.5) transparent; }
+  *::-webkit-scrollbar { width: 4px; height: 4px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: rgba(51,65,85,0.5); border-radius: 9999px; }
+  *::-webkit-scrollbar-thumb:hover { background: rgba(71,85,105,0.8); }
 }
 
 @layer utilities {
   .glass-panel {
-    @apply bg-dark-800/80 backdrop-blur-md border border-dark-700/50 rounded-xl shadow-xl;
+    background: rgba(10, 18, 38, 0.8);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  .stat-card {
+    background: rgba(12, 22, 48, 0.85);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .stat-card:hover {
+    border-color: rgba(59,130,246,0.3);
+    box-shadow: 0 0 16px rgba(59,130,246,0.08);
+  }
+
+  .event-card {
+    background: rgba(10, 18, 38, 0.85);
+    border-radius: 10px;
+    transition: all 0.15s;
+  }
+
+  .capability-card {
+    background: rgba(10, 18, 38, 0.85);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.07);
+    transition: border-color 0.2s;
+  }
+  .capability-card:hover { border-color: rgba(255,255,255,0.13); }
+
+  /* Animated pulse for running status */
+  @keyframes status-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .status-running { animation: status-pulse 2s ease-in-out infinite; }
+
+  .glow-blue  { box-shadow: 0 0 20px rgba(59,130,246,0.3); }
+  .glow-green { box-shadow: 0 0 20px rgba(16,185,129,0.2); }
+  .glow-red   { box-shadow: 0 0 14px rgba(239,68,68,0.2); }
+
+  /* Subtle dot-grid overlay for the audit panel */
+  .dot-grid::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none;
+    border-radius: inherit;
   }
 }
