@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 
-import type { RoutingDecision, ValidatedInputEvent } from '../../../world_model/schema';
+import type { RoutingDecision, ValidatedInputEvent } from '../world_model/schema';
 
 /**
  * Bridge the CommonJS application server to the ESM intelligence layer by
@@ -9,15 +9,15 @@ import type { RoutingDecision, ValidatedInputEvent } from '../../../world_model/
  */
 export class OrchestratorRouter {
   async handleEvent(event: ValidatedInputEvent): Promise<RoutingDecision> {
-    const bridgeScript = resolve(__dirname, '../../../interfaces/submit_request.ts');
-    const tsNodeEsmLoader = resolve(__dirname, '../../node_modules/ts-node/esm.mjs');
+    const bridgeScript = resolve(__dirname, 'run_intelligence_bridge.mjs');
+    const tsxPath = resolve(__dirname, '../../node_modules/tsx/dist/cli.mjs');
 
     return new Promise<RoutingDecision>((resolvePromise, rejectPromise) => {
       const child = spawn(
         process.execPath,
-        ['--loader', tsNodeEsmLoader, bridgeScript],
+        [tsxPath, '--no-warnings', bridgeScript],
         {
-          cwd: resolve(__dirname, '../../..'),
+          cwd: resolve(__dirname, '../..'),
           stdio: ['pipe', 'pipe', 'pipe'],
         },
       );

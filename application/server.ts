@@ -10,7 +10,7 @@ import swaggerDocument from "./swagger.json";
 import { v4 as uuidv4 } from "uuid";
 import { JobRequestSchema } from "./src/module_1/schema";
 import { OrchestratorRouter } from "./src/orchestrator/router";
-import { ValidatedInputEvent } from "../world_model/schema";
+import { ValidatedInputEvent } from "./src/world_model/schema";
 
 const SYSTEM_PROMPT = `
 You are the "Input Contract Module" (Module 1) for an Elite Web Scraping framework. 
@@ -46,11 +46,11 @@ RULE 2: If the target domain IS clear and sufficient context exists, you MUST ou
 DO NOT output conversational text, markdown blocks, or anything outside of the JSON object.
 `;
 
-// Initialize environment variables from .env file (now located in project root)
-dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
+// Initialize environment variables from .env file
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8000;
 const orchestratorRouter = new OrchestratorRouter();
 
 // Middleware

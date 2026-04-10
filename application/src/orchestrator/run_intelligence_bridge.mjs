@@ -8,7 +8,7 @@ console.info = console.error;
 console.debug = console.error;
 console.warn = console.error;
 
-const baseDir = resolve(import.meta.dirname, '../../..');
+const baseDir = resolve(import.meta.dirname, '..');
 const registryModule = await import(pathToFileURL(resolve(baseDir, 'capabilities/registry.ts')).href);
 const orchestratorModule = await import(pathToFileURL(resolve(baseDir, 'intelligence/orchestrator.ts')).href);
 const eventStoreModule = await import(pathToFileURL(resolve(baseDir, 'world_model/event_store.ts')).href);
