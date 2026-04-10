@@ -1,0 +1,590 @@
+﻿Travel Production Pipeline – 
+Definition Document & Proposal for Agentic Framework
+
+
+
+
+
+
+Objective
+
+
+The objective of this document is to define the overall workflow of the Production process in the Travel vertical, which includes end-to-end data processing workflow, phases involved in the process, and the teams and roles that execute the respective processes. It also focuses on defining each role in the current flow in the context of a Proposed ‘Agent’ framework.
+
+
+
+
+Process Overview
+
+
+The workflow consists of three primary phases:
+1. Requirement Phase – Requirement analysis, input generation and preparation 
+2. Production Phase – Scripting, QA, Data extraction, validation, and transformation 
+3. Delivery Phase – Data export and distribution 
+
+
+Following is a brief description of key processes in the workflow.
+
+
+1. Requirement Phase
+
+
+This phase captures client requests, prepares inputs, and defines execution parameters.
+
+
+Steps
+1. Client submits request (internal/external) 
+2. Request is received via supported channels: 
+   * Shop Manager 
+   * API 
+   * Email / Other 
+3. Request is scheduled for processing 
+4. Inputs are generated 
+5. Processing parameters are defined (time, date, location, etc.) 
+
+
+  
+
+
+
+
+
+2. Production Phase
+
+
+This phase evaluates feasibility, performs data extraction, ensures quality, and standardizes output.
+
+
+Steps
+
+
+A. Feasibility Check
+The source is analysed to determine if requested data can be processed. There are two outcomes – the script is available, in which case the process moves to data extraction; if not, it moves to script development phase.
+
+
+B. Scripting
+* Development of script for new sources
+* Review / Update existing script per requirement
+* Complex sources to be moved to Stealth
+
+
+C. Data Extraction
+* Configure infrastructure
+   * Select cloud resources 
+   * Setup the instances with required support files/scripts.
+   * Configure proxy 
+* Apply scaling strategy: 
+   * Auto-scale based on workload 
+   * Monitor and optimize cost 
+* Execute extraction jobs 
+   * Escalate script failures
+   * Rotate proxies based on source response
+* Handle failures: 
+   * Retry logic 
+   * Alerts and fallbacks 
+
+
+D. Data Processing
+* Perform quality checks
+   * Rule validation 
+   * Source verification 
+* Normalize data
+   * Structure formatting 
+   * Data mapping 
+
+
+E. Exception Handling
+* Place request on hold 
+* Perform
+   * Source equivalency analysis 
+   * Specialized handling (e.g., stealth methods) 
+* Onboard request
+   * Create scripts/pipelines 
+   * Reintroduce into workflow 
+
+
+  
+
+
+
+3. Delivery Phase
+
+
+This phase ensures processed data is formatted and delivered according to client requirements.
+
+
+Steps
+1. Export data into required client format/template 
+2. Deliver via one of the following methods: 
+   * Upload to client endpoint 
+   * Push to client database 
+   * Push to internal systems (e.g., analytics platforms, FTP) 
+
+
+  
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Agent-Based Data Processing Framework
+
+
+Overview
+
+
+The data processing workflow that currently exists in the Travel vertical is being restructured into a system of specialized AI agents. Each agent is responsible for a distinct phase of the pipeline and operates autonomously while interacting with other agents to ensure end-to-end execution in a seamless way.
+
+
+The ‘Agent’ descriptions stem from the current ‘teams / resources’ concept. Therefore, each of the roles defined in this document form the basis for the respective AI Agent to take on the role, and thereby contribute to process optimization, cost reduction, scalability and a dynamic ‘always-on’ Agent team to handle the remit of data production and delivery.
+
+
+
+
+The Agents
+
+
+The following Agents represent the general, complete workflow of the Production process:
+
+
+1. Master Agent
+2. Assessment Agent
+3. Scheduling Agent
+4. Onboarding Agent
+5. Scripting Agent
+6. Extraction Agent
+7. Production Agent
+8. Sentinel / Monitoring Agent
+9. Specialist / SME Agent
+10. Transformation / Standardization Agent
+11. QA Agent
+12. Delivery Agent
+13. Support Agent
+14. Compliance Agent
+
+
+
+
+1. Master Agent
+
+
+The Master Agent or Orchestrator Agent is the key for setting up the entire agent team for the production pipeline and ensuring a seamless workflow. It also acts as the primary control centre of all the Agents.
+
+
+Role:
+
+
+* Initialize Agent orchestration and coordination 
+* Define interaction workflow between agents
+* Manage the sequence of tasks
+* Design end-to-end pipeline workflow
+* Monitor execution across all stages and detect workflow failures or bottlenecks to the concerned department
+* Act as the centralized control system for visibility into each agent function and ensure that the agent ecosystem is scalable, reliable and efficient
+* Maintain information on client requirement and expected turnaround time of processes
+
+
+
+
+2. Assessment Agent
+
+
+The Assessment Agent acts as the entry point of the system. It is responsible for capturing, validating, structuring, and scheduling all incoming data requests. This agent ensures that every request is complete, standardized, and ready for downstream processing.
+
+
+Role:
+
+
+A. Request Ingestion
+* Accept requests from
+   * Shop Manager 
+   * API integrations 
+   * Email / manual submissions 
+* Assign unique request IDs 
+* Log request metadata for tracking 
+
+
+B. Validation & Standardization
+* Validate required fields: 
+   * Data source 
+   * Time range 
+   * Output format 
+* Normalize request structure into a standard schema 
+* Reject or flag incomplete requests 
+
+
+C. Input Generation
+* Prepare input datasets or query parameters 
+* Resolve dependencies (e.g., credentials, endpoints) 
+* Validates inputs based on the requirement
+
+
+D. Scheduling & Prioritization
+* Queue requests based on: 
+   * Priority (SLA-driven) 
+   * Resource availability 
+* Trigger execution windows 
+
+
+E. Processing Configuration
+* Define: 
+   * Time, date, and frequency 
+   * Geographic or logical filters 
+   * Special constraints 
+
+
+
+
+
+
+  
+
+
+
+
+
+3. Scheduling Agent
+
+
+The Scheduling Agent is responsible for managing process schedules, input generation and setting the stage for the onboarding process.
+
+
+Role:
+* Design and manage scheduling mechanisms for each process
+* Ensure requests are queued, triggered, and executed at the correct time
+* Interact with the database to set the queues
+* Structure and prepare input data in required formats and ensure the data is complete, correct (links to the process at specified schedule), and ready for processing
+* Validate generated inputs and scheduling logic to ensure accuracy, completeness, and alignment with client requirements before execution
+
+
+
+
+4. Onboarding Agent
+
+
+The Onboarding Agent is responsible for checking the feasibility of sources, allocation to scripting as required, quality check prior to onboarding, time tracking, technical resource allocation, deployment and extraction scheduling.
+
+
+Role:
+
+
+A. Feasibility check
+* Evaluate the given source to determine if requested data can be extracted using existing systems or requires new development
+* Understand technical constraints of the source and its limitations
+
+
+
+
+B. Scripting Agent allocation
+* Provide required input to Scripting agent 
+   * new development or 
+   * update to existing script
+
+
+C. Maintain Knowledge Repo
+* Define the rules and logic for data extraction for every process
+* Maintain a repository of checklists for every process that include details on data attributes, validation criteria, extraction method, anomalies, client requirements
+
+
+
+
+D. Time tracking
+* Estimate effort, infrastructure and resource requirement
+* Track and log time for onboarding and ensure it is in line with client expectation
+* Send information back to Master Agent on a phased basis
+
+
+E. Technical Resource Allocation
+* Assign and configure technical resources (compute, storage, proxies, tools) required for data extraction and processing
+* Deploy scripts and systems into testing and production environments
+* Run tests to check for stability, scalability, and proper environment configuration
+
+
+F. Extraction Scheduling
+* Configure automated execution schedules for extraction jobs
+* Check if extraction schedules are in alignment with expected data collection output from Assessment Agent
+ 
+
+
+5. Scripting Agent
+
+
+This is the kernel of the production process. The Scripting Agent maintains a repository of pre-developed scripts, and updates them periodically or on a need basis. New scripts are developed when there is a requirement for new sources not currently in the repository.
+
+
+Role:
+
+
+* Develop and configure scripts or pipelines to extract data in compliance with requirements
+* Maintain a library of source-specific intelligence that includes blocking methods, resolutions, optimal proxies, fingerprint management
+* Tests scripts and onboarding setup to ensure correct data extraction, logic accuracy, and adherence to quality standards
+* Periodically review non-live scripts to ensure they remain aligned with the source’s current structure
+* Run snippets and sample extraction for each source to confirm availability
+* Factor the different versions (mobile, desktop) while scripting for each source
+
+
+
+
+6. Extraction Agent
+
+
+The data extraction activity is managed by the Extraction Agent.
+
+
+Role:
+
+
+* To create batch files in extraction machines for every process, which will be scheduled to initiate the extraction script
+* Run the extraction script for every source per daily schedule
+* Direct that extracted data to a ‘predefined’ destination folder for further processing by the Production and QA agents
+* Once the extraction process is completed for a specific source, ensure that the automated scripts run properly to terminate all the hired cloud resources
+
+
+
+
+7. Production Agent
+
+
+The Production Agent is the core processing engine of the system. It works closely with the Master Agent and other Agents in the pipeline to determine that the process is ready for execution. It then organizes the infrastructure, performs extraction, validates quality, and transforms data into standardized outputs with the help of other Agents down the pipeline.
+
+
+A. Infrastructure & DevOps Setup
+* Select optimal cloud resources 
+* Configure proxies and network routing 
+* Initialize environments for extraction 
+
+
+B. Dynamic Scaling
+* Scale up/down based on: 
+   * Input volume 
+   * Queue size 
+
+
+C. Data Extraction Execution
+* Execute pipelines/jobs 
+* Capture raw data 
+* Maintain logs for traceability 
+* Rotate proxies based on source’s response
+* Log the call consumption for billing purposes
+
+
+D. Reliability & Failure Handling
+* Retry failed jobs automatically 
+* Trigger alerts for critical failures 
+* Apply fallback mechanisms 
+* Report non-functional proxies
+
+
+E. Exception & Onboarding Flow
+* Place unprocessed requests on hold 
+* Perform: 
+   * Source equivalency analysis 
+   * Queue and transfer to SME Agent 
+* Develop onboarding scripts/pipelines
+* Reintegrate into processing
+
+
+
+
+  
+
+
+
+
+
+
+
+8. Sentinel / Monitoring Agent
+
+
+The Sentinel Agent is responsible for monitoring the data production process to ensure timely completion of the extraction process and make the data ready for delivery. While the Extraction Agent is scheduled to initiate and shop the data at predefined intervals, the schedulers still need to be monitored at regular intervals to make sure that extraction is completed on time.
+
+
+Role:
+
+
+* Review and confirm that the inputs / queues are generated and allocated properly in the scheduling environment so that there are no failures in processing
+* Manage cloud resources and raise alert if there are any need for additional cloud resources to complete the delivery on time
+* Maintain daily delivery summaries for each process and send the logs to Master Agent to be used later for monthly call counts / billing process
+* Proactively monitor and if any of the schedules were not run per plan due to reasons such as site latency or source script issue, blocking issues, etc. then re-allocate / move inputs into appropriate machines, especially in the case of complex sources
+* Monitor processes closely for any slowness in the extraction process, and any related database latency issues.
+
+
+
+
+
+
+9. Specialist / SME Agent
+
+
+The Subject Matter Expert (SME) Agent is the powerhouse of knowledge and exception handling. This Agent has exceptional skills to handle exclusive sources, custom requirements of every client and 
+
+
+Role:
+
+
+* Serve as the expert for complex queries, client-specific requirements, and escalations
+* Maintain a repository of the different requirements for each source by customer / process, with a marked pathway for production and other agents
+* Provide tailored solutions and guidance to support frontline agents and clients
+* Maintain and share specialized knowledge, ensuring quality and compliance
+* Identify process gaps and recommend improvements from a customer perspective
+* Act as the advisor for special cases, exceptions, anomalies and provide resolutions
+
+
+
+
+10. Transformation / Standardization Agent
+
+
+The goal of the Transformation Agent is to transform the extracted / raw data into structured formats and apply mappings to align with client-specific schemas and standards.
+
+
+Role:
+
+
+* Convert processed data into: 
+   * Client-specific templates 
+   * Required file formats (CSV, JSON, etc.) 
+* Validate the transformed structure / formats
+* Apply schema mapping and ensure compliance 
+* Standardize outputs
+
+
+
+
+11. QA Agent
+
+
+The Quality Assurance Agent is a critical component of the production process. This Agent ensures that the deliverable meets all the required quality standards.
+
+
+Role:
+
+
+* Validate extracted data against logical parameters, internal checklists, client-specific rules and source accuracy
+* Ensure that the data is: 
+   * Complete
+   * Accurate
+   * Consistent
+* Crosscheck the deliverable directly with the source data and ensure they match. If anomalies are found, send back to the Production Agent
+
+
+
+
+12. Delivery Agent
+
+
+The Delivery Agent is responsible for preparing and formatting processed data into client-required templates or structures for delivery. It manages delivery pipelines, ensuring secure, reliable, and timely transfer of data to client endpoints or systems.
+
+
+Role:
+
+
+A. Export Management
+* Package data for delivery 
+* Apply compression/encryption if required 
+
+
+B. Delivery Execution
+* Deliver via: 
+   * Client endpoints (APIs, SFTP, etc.) 
+   * Client databases 
+   * Internal systems (analytics/reporting tools) 
+
+
+C. Delivery Validation
+* Confirm successful transmission 
+* Perform integrity checks 
+* Log delivery status 
+
+
+D. Error Handling
+* Retry failed deliveries 
+* Notify stakeholders 
+* Escalate persistent failures 
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+13. Support Agent
+
+
+The Support Agent is responsible for providing timely and accurate assistance to clients, customers, or internal teams. They act as the first point of contact for queries, issues, and requests, ensuring a smooth and positive experience.
+
+
+
+
+Role:
+
+
+* Respond to client or internal inquiries via email, or chat
+* Troubleshoot issues and provide resolutions or escalate when needed
+* Document cases and maintain records for reference and reporting
+* Support process adherence and service quality standards
+* Collaborate with teams to improve response efficiency
+
+
+
+
+14. Compliance Agent
+
+
+The Compliance Agent ensures that the organization’s operations, processes, and interactions adhere to regulatory, legal, and internal policy requirements. They safeguard the company against risks and maintain operational integrity. Most importantly, they hold the rule book for data security and exposure.
+
+
+Role:
+
+
+* Review and confirm that all Agents comply with data protection policies
+* Ensure that no Agent accesses sensitive data credentials, API credentials, API tokens, keys, cloud credentials and other data secrets unless explicit permission is given
+* Monitor and enforce compliance with applicable laws, regulations, and company policies
+* Review and audit processes, transactions, and documentation for compliance gaps
+* Report and escalate non-compliance issues to management
+* Support training and awareness initiatives to ensure team adherence
+* Recommend process improvements to mitigate compliance risks
