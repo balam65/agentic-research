@@ -1,4 +1,4 @@
-import { RoutingDecision, WorkflowEventInput } from '../world_model/schema.js';
+import { WorkflowEventInput, WorkflowRunResult } from '../world_model/schema.js';
 
 export type AgenticRequest = WorkflowEventInput;
-export type AgenticResponse = RoutingDecision;
+export type AgenticResponse = WorkflowRunResult;

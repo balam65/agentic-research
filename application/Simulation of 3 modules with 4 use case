@@ -1,0 +1,972 @@
+Below are 4 exact walkthroughs:
+
+- 3 failure-case simulations
+- 1 normal success simulation
+
+I’ll keep the same architecture:
+
+- Module 2 decides
+- Module 3 executes one requested capability
+- Module 3 returns only intermediate decision-requiring events
+- final validated output does not go back to Module 2
+
+---
+
+**Simulation 1: Extraction fails, Module 2 retries, retry succeeds**
+
+**Initial input**
+```json
+{
+  "event_id": "req-001",
+  "event_type": "INPUT_CONTRACT_VALIDATED",
+  "timestamp": "2026-04-10T10:00:00.000Z",
+  "payload": {
+    "target": {
+      "url_or_domain": "example.com",
+      "scope": "product_pages"
+    },
+    "search_parameters": {},
+    "intent_context": "Extract product content",
+    "constraints": {
+      "max_time_ms": 300000,
+      "requires_js_rendering": true,
+      "human_in_loop_required": false
+    },
+    "expected_schema": {
+      "title": "string",
+      "content": "string",
+      "source_url": "string"
+    }
+  },
+  "confidence_score": 1,
+  "justification": "Validated by Module 1"
+}
+```
+
+**Step 1**
+Module 2 receives `INPUT_CONTRACT_VALIDATED`.
+
+World state before decision:
+- no artifacts
+- retry count = 0
+- no failures
+
+Module 2 decision:
+```json
+{
+  "workflow_id": "req-001",
+  "next_event": "CAPABILITY_EXECUTION_REQUIRED",
+  "target_module": "assess_request",
+  "decision_source": "model",
+  "status": "in_progress",
+  "reasoning": "Intent profile is missing, so assess_request should run first.",
+  "requires_human_review": false,
+  "confidence": 0.96
+}
+```
+
+**Step 2**
+Bridge converts that to Module 3 request:
+```json
+{
+  "workflow_id": "req-001",
+  "decision_id": "dec-001",
+  "event_type": "CAPABILITY_EXECUTION_REQUEST",
+  "next_task": "capability_execution_required",
+  "target_capability": "assess_request",
+  "input_context": {
+    "target_url": "https://example.com",
+    "expected_schema": {
+      "title": "string",
+      "content": "string",
+      "source_url": "string"
+    },
+    "artifacts": {}
+  }
+}
+```
+
+**Step 3**
+Module 3 executes `assess_request`.
+
+Produced internal event:
+```json
+{
+  "event_name": "assessment_completed",
+  "job_id": "req-001",
+  "payload": {
+    "target_domain": "example.com",
+    "extracted_schema_definition": {
+      "title": "string",
+      "content": "string",
+      "source_url": "string"
+    },
+    "budget_or_time_constraints": {
+      "max_minutes": 5,
+      "timeout_ms": 300000
+    }
+  },
+  "confidence_score": 0.96
+}
+```
+
+**Step 4**
+Bridge maps to Module 2 downstream event:
+```json
+{
+  "event_type": "ASSESSMENT_COMPLETED",
+  "workflow_id": "req-001",
+  "payload": {
+    "module": "module-3",
+    "stage": "assess_request",
+    "artifacts": [
+      {
+        "kind": "intent_profile",
+        "producedBy": "module-3.assessment",
+        "content": {
+          "target_domain": "example.com"
+        }
+      }
+    ]
+  },
+  "confidence_score": 0.96
+}
+```
+
+**Step 5**
+Module 2 receives `ASSESSMENT_COMPLETED`.
+
+World state now:
+- `intent_profile` exists
+
+Decision:
+```json
+{
+  "workflow_id": "req-001",
+  "target_module": "discover_targets",
+  "reasoning": "Candidate targets are missing, so discovery is next.",
+  "requires_human_review": false,
+  "confidence": 0.94,
+  "status": "in_progress"
+}
+```
+
+**Step 6**
+Module 3 executes `discover_targets`.
+
+Produced:
+```json
+{
+  "event_name": "url_discovered",
+  "payload": {
+    "target_domain": "example.com",
+    "discovered_url": "https://example.com/research",
+    "domain_authority": 85
+  },
+  "confidence_score": 0.92
+}
+```
+
+Bridge returns:
+```json
+{
+  "event_type": "DISCOVERY_COMPLETED",
+  "payload": {
+    "artifacts": [
+      {
+        "kind": "candidate_targets",
+        "content": {
+          "discovered_url": "https://example.com/research"
+        }
+      }
+    ]
+  }
+}
+```
+
+**Step 7**
+Module 2 decides:
+```json
+{
+  "workflow_id": "req-001",
+  "target_module": "generate_extractor",
+  "reasoning": "Candidate target exists, but extraction plan is missing.",
+  "confidence": 0.93
+}
+```
+
+**Step 8**
+Module 3 executes `generate_extractor`.
+
+Produced:
+```json
+{
+  "event_name": "script_ready",
+  "payload": {
+    "target_url": "https://fail.example.com/research",
+    "script_id": "script-100",
+    "playwright_script": "const title = await page.textContent('h1'); ..."
+  },
+  "confidence_score": 0.90
+}
+```
+
+In this simulation, assume discovered target or execution artifact later points to `https://fail.example.com/research`.
+
+Bridge maps to:
+```json
+{
+  "event_type": "EXTRACTION_PLAN_COMPLETED",
+  "payload": {
+    "artifacts": [
+      {
+        "kind": "extraction_plan",
+        "content": {
+          "target_url": "https://fail.example.com/research",
+          "script_id": "script-100"
+        }
+      }
+    ]
+  }
+}
+```
+
+**Step 9**
+Module 2 decides:
+```json
+{
+  "workflow_id": "req-001",
+  "target_module": "acquire_execution_context",
+  "reasoning": "Extraction plan exists, runtime context is missing.",
+  "confidence": 0.91
+}
+```
+
+**Step 10**
+Module 3 executes `acquire_execution_context`.
+
+Produced:
+```json
+{
+  "event_name": "proxy_acquired",
+  "payload": {
+    "target_url": "https://fail.example.com/research",
+    "script_id": "script-100",
+    "proxy_id": "proxy-node-4",
+    "anti_bot_evasion_enabled": true
+  },
+  "confidence_score": 0.90
+}
+```
+
+Bridge maps to:
+```json
+{
+  "event_type": "EXECUTION_CONTEXT_COMPLETED",
+  "payload": {
+    "artifacts": [
+      {
+        "kind": "execution_session",
+        "content": {
+          "target_url": "https://fail.example.com/research",
+          "script_id": "script-100",
+          "proxy_id": "proxy-node-4"
+        }
+      }
+    ]
+  }
+}
+```
+
+**Step 11**
+Module 2 decides extraction:
+```json
+{
+  "workflow_id": "req-001",
+  "next_event": "EXTRACTION_REQUIRED",
+  "target_module": "extract_data",
+  "reasoning": "Execution session exists, so extraction should run.",
+  "confidence": 0.89
+}
+```
+
+**Step 12**
+Module 3 executes extraction.
+
+Because URL contains `fail`, produced:
+```json
+{
+  "event_name": "extraction_failed",
+  "payload": {
+    "error": "Simulated extraction failure triggered by target URL"
+  },
+  "confidence_score": 0.45,
+  "justification": "Simulated extraction failure triggered by target URL"
+}
+```
+
+Bridge maps to:
+```json
+{
+  "event_type": "EXTRACTION_FAILED",
+  "workflow_id": "req-001",
+  "payload": {
+    "module": "module-3",
+    "stage": "extract_data",
+    "reason": "Simulated extraction failure triggered by target URL"
+  },
+  "confidence_score": 0.45
+}
+```
+
+**Step 13**
+Module 2 receives `EXTRACTION_FAILED`.
+
+World state now:
+- `retry_count = 0`
+- failure recorded
+- artifacts still include execution plan/session
+
+Module 2 decides retry:
+```json
+{
+  "workflow_id": "req-001",
+  "next_event": "EXTRACTION_REQUIRED",
+  "target_module": "extract_data",
+  "decision_source": "model",
+  "status": "in_progress",
+  "reasoning": "Extraction failure appears retriable and retry budget remains.",
+  "requires_human_review": false,
+  "confidence": 0.71
+}
+```
+
+**Step 14**
+Bridge sends another extraction request, but assume target has been corrected for retry:
+```json
+{
+  "target_capability": "extract_data",
+  "input_context": {
+    "target_url": "https://example.com/research",
+    "artifacts": {
+      "execution_session": {
+        "target_url": "https://example.com/research",
+        "script_id": "script-100",
+        "proxy_id": "proxy-node-4"
+      }
+    }
+  }
+}
+```
+
+**Step 15**
+Module 3 extraction now succeeds:
+```json
+{
+  "event_name": "extraction_completed",
+  "payload": {
+    "extracted_data": {
+      "title": "mock_title",
+      "content": "mock_content",
+      "source_url": "https://example.com/research"
+    },
+    "source_url": "https://example.com/research",
+    "extractor_type": "playwright_mock"
+  },
+  "confidence_score": 0.91
+}
+```
+
+Bridge maps to:
+```json
+{
+  "event_type": "EXTRACTION_COMPLETED",
+  "payload": {
+    "artifacts": [
+      {
+        "kind": "raw_dataset",
+        "content": {
+          "data": {
+            "title": "mock_title",
+            "content": "mock_content",
+            "source_url": "https://example.com/research"
+          }
+        }
+      }
+    ]
+  },
+  "confidence_score": 0.91
+}
+```
+
+**Step 16**
+Module 2 decides:
+```json
+{
+  "workflow_id": "req-001",
+  "target_module": "validate_output",
+  "reasoning": "Raw dataset exists, so validation is next.",
+  "confidence": 0.95
+}
+```
+
+**Step 17**
+Module 3 validates:
+```json
+{
+  "event_name": "qa_validated",
+  "payload": {
+    "validated_data": {
+      "title": "mock_title",
+      "content": "mock_content",
+      "source_url": "https://example.com/research"
+    }
+  },
+  "confidence_score": 0.91
+}
+```
+
+**Step 18**
+This is terminal. Bridge does not return to Module 2 for a new decision.
+
+Terminal artifacts written:
+```json
+[
+  {
+    "kind": "validated_dataset",
+    "content": {
+      "validatedData": {
+        "title": "mock_title",
+        "content": "mock_content",
+        "source_url": "https://example.com/research"
+      }
+    }
+  },
+  {
+    "kind": "final_result",
+    "content": {
+      "validatedData": {
+        "title": "mock_title",
+        "content": "mock_content",
+        "source_url": "https://example.com/research"
+      }
+    }
+  }
+]
+```
+
+Final output:
+```json
+{
+  "requestId": "req-001",
+  "status": "completed",
+  "validatedData": {
+    "title": "mock_title",
+    "content": "mock_content",
+    "source_url": "https://example.com/research"
+  }
+}
+```
+
+---
+
+**Simulation 2: Extraction fails twice, Module 2 escalates to HITL**
+
+Same setup as Simulation 1 through first failure.
+
+**Step 1 to Step 12**
+Same as above until Module 2 receives:
+```json
+{
+  "event_type": "EXTRACTION_FAILED",
+  "workflow_id": "req-002",
+  "confidence_score": 0.45
+}
+```
+
+**Step 13**
+Module 2 decides retry because retry budget remains:
+```json
+{
+  "workflow_id": "req-002",
+  "target_module": "extract_data",
+  "next_event": "EXTRACTION_REQUIRED",
+  "reasoning": "Retry extraction once before escalating.",
+  "confidence": 0.70
+}
+```
+
+**Step 14**
+Module 3 retries extraction again on failing URL:
+```json
+{
+  "event_name": "extraction_failed",
+  "payload": {
+    "error": "Simulated extraction failure triggered by target URL"
+  },
+  "confidence_score": 0.45
+}
+```
+
+Bridge returns another:
+```json
+{
+  "event_type": "EXTRACTION_FAILED",
+  "workflow_id": "req-002"
+}
+```
+
+**Step 15**
+Module 2 receives second `EXTRACTION_FAILED`.
+
+World state now:
+- repeated failure
+- retry budget effectively exhausted
+- no raw dataset produced
+- failure history exists
+
+Module 2 decides HITL:
+```json
+{
+  "workflow_id": "req-002",
+  "next_event": "HITL_REQUIRED",
+  "target_module": null,
+  "decision_source": "control_policy",
+  "status": "waiting_for_human",
+  "reasoning": "Extraction failed repeatedly and should be escalated for human review.",
+  "requires_human_review": true,
+  "confidence": 0.40
+}
+```
+
+**Step 16**
+Loop stops because this is not another execution step.
+
+Final workflow output:
+```json
+{
+  "requestId": "req-002",
+  "status": "waiting_for_human",
+  "validatedData": null
+}
+```
+
+Meaning:
+- Module 2 stayed the brain
+- Module 3 only executed extraction twice
+- Module 2 decided escalation
+
+---
+
+**Simulation 3: Extraction succeeds but confidence is low, Module 2 retries or escalates**
+
+This is the fallback case.
+
+Use a URL that contains `fallback.example.com`.
+
+**Step 1 to Step 10**
+Same early flow:
+- assess_request
+- discover_targets
+- generate_extractor
+- acquire_execution_context
+
+Assume execution session target is:
+```json
+{
+  "target_url": "https://fallback.example.com/research"
+}
+```
+
+**Step 11**
+Module 2 decides extraction:
+```json
+{
+  "workflow_id": "req-003",
+  "target_module": "extract_data",
+  "next_event": "EXTRACTION_REQUIRED",
+  "reasoning": "Execution session exists, extraction should run.",
+  "confidence": 0.90
+}
+```
+
+**Step 12**
+Module 3 executes extraction.
+
+Because URL contains `fallback`, Module 3 produces:
+```json
+{
+  "event_name": "extraction_completed",
+  "payload": {
+    "extracted_data": {
+      "title": "mock_title",
+      "content": "mock_content",
+      "source_url": "https://fallback.example.com/research"
+    },
+    "source_url": "https://fallback.example.com/research",
+    "extractor_type": "playwright_mock"
+  },
+  "confidence_score": 0.72,
+  "justification": "Extraction succeeded via fallback strategy with reduced confidence."
+}
+```
+
+**Step 13**
+Bridge checks confidence threshold and maps this not to `EXTRACTION_COMPLETED`, but to:
+```json
+{
+  "event_type": "LOW_CONFIDENCE_DETECTED",
+  "workflow_id": "req-003",
+  "payload": {
+    "module": "module-3",
+    "stage": "extract_data",
+    "artifacts": [
+      {
+        "kind": "raw_dataset",
+        "content": {
+          "data": {
+            "title": "mock_title",
+            "content": "mock_content",
+            "source_url": "https://fallback.example.com/research"
+          }
+        }
+      }
+    ]
+  },
+  "confidence_score": 0.72,
+  "justification": "Extraction succeeded via fallback strategy with reduced confidence."
+}
+```
+
+**Step 14**
+Module 2 receives `LOW_CONFIDENCE_DETECTED`.
+
+World state:
+- raw dataset exists
+- retry count increments
+- low confidence recorded
+
+Two possible decisions.
+
+**Path A: Retry**
+If retry budget remains:
+```json
+{
+  "workflow_id": "req-003",
+  "target_module": "extract_data",
+  "next_event": "EXTRACTION_REQUIRED",
+  "status": "in_progress",
+  "reasoning": "Low-confidence extraction should be retried before validation.",
+  "requires_human_review": false,
+  "confidence": 0.68
+}
+```
+
+Retry happens, and if confidence improves, bridge returns `EXTRACTION_COMPLETED`, then Module 2 picks `validate_output`.
+
+**Path B: HITL**
+If low-confidence persists after retries:
+```json
+{
+  "workflow_id": "req-003",
+  "target_module": null,
+  "next_event": "HITL_REQUIRED",
+  "status": "waiting_for_human",
+  "reasoning": "Confidence remains below threshold after retries, escalating to HITL.",
+  "requires_human_review": true,
+  "confidence": 0.50
+}
+```
+
+Then workflow pauses for human review.
+
+---
+
+**Simulation 4: Normal input that works end-to-end**
+
+This is the clean happy path.
+
+**Initial input**
+```json
+{
+  "event_id": "req-004",
+  "event_type": "INPUT_CONTRACT_VALIDATED",
+  "timestamp": "2026-04-10T11:00:00.000Z",
+  "payload": {
+    "target": {
+      "url_or_domain": "example.com",
+      "scope": "product_pages"
+    },
+    "search_parameters": {},
+    "intent_context": "Extract product content",
+    "constraints": {
+      "max_time_ms": 300000,
+      "requires_js_rendering": true,
+      "human_in_loop_required": false
+    },
+    "expected_schema": {
+      "title": "string",
+      "content": "string",
+      "source_url": "string"
+    }
+  },
+  "confidence_score": 1,
+  "justification": "Validated by Module 1"
+}
+```
+
+**Step 1**
+Module 2 receives `INPUT_CONTRACT_VALIDATED`.
+
+Decision:
+```json
+{
+  "workflow_id": "req-004",
+  "target_module": "assess_request",
+  "reasoning": "Intent profile is missing, start with assessment.",
+  "confidence": 0.96
+}
+```
+
+**Step 2**
+Module 3 executes assessment.
+
+Produced:
+```json
+{
+  "event_name": "assessment_completed",
+  "confidence_score": 0.96
+}
+```
+
+Bridge returns `ASSESSMENT_COMPLETED` with `intent_profile`.
+
+**Step 3**
+Module 2 receives `ASSESSMENT_COMPLETED`.
+
+Decision:
+```json
+{
+  "workflow_id": "req-004",
+  "target_module": "discover_targets",
+  "reasoning": "Candidate targets are missing.",
+  "confidence": 0.94
+}
+```
+
+**Step 4**
+Module 3 discovery produces:
+```json
+{
+  "event_name": "url_discovered",
+  "payload": {
+    "discovered_url": "https://example.com/research"
+  },
+  "confidence_score": 0.92
+}
+```
+
+Bridge returns `DISCOVERY_COMPLETED` with `candidate_targets`.
+
+**Step 5**
+Module 2 receives `DISCOVERY_COMPLETED`.
+
+Decision:
+```json
+{
+  "workflow_id": "req-004",
+  "target_module": "generate_extractor",
+  "reasoning": "Need an extraction plan.",
+  "confidence": 0.93
+}
+```
+
+**Step 6**
+Module 3 scripting produces:
+```json
+{
+  "event_name": "script_ready",
+  "payload": {
+    "target_url": "https://example.com/research",
+    "script_id": "script-200"
+  },
+  "confidence_score": 0.90
+}
+```
+
+Bridge returns `EXTRACTION_PLAN_COMPLETED`.
+
+**Step 7**
+Module 2 receives `EXTRACTION_PLAN_COMPLETED`.
+
+Decision:
+```json
+{
+  "workflow_id": "req-004",
+  "target_module": "acquire_execution_context",
+  "reasoning": "Need runtime session/proxy before capture.",
+  "confidence": 0.91
+}
+```
+
+**Step 8**
+Module 3 runtime setup produces:
+```json
+{
+  "event_name": "proxy_acquired",
+  "payload": {
+    "target_url": "https://example.com/research",
+    "proxy_id": "proxy-node-7"
+  },
+  "confidence_score": 0.90
+}
+```
+
+Bridge returns `EXECUTION_CONTEXT_COMPLETED`.
+
+**Step 9**
+Module 2 receives `EXECUTION_CONTEXT_COMPLETED`.
+
+Decision:
+```json
+{
+  "workflow_id": "req-004",
+  "target_module": "extract_data",
+  "next_event": "EXTRACTION_REQUIRED",
+  "reasoning": "Runtime is ready, execute extraction.",
+  "confidence": 0.90
+}
+```
+
+**Step 10**
+Module 3 extraction succeeds:
+```json
+{
+  "event_name": "extraction_completed",
+  "payload": {
+    "extracted_data": {
+      "title": "mock_title",
+      "content": "mock_content",
+      "source_url": "https://example.com/research"
+    }
+  },
+  "confidence_score": 0.91
+}
+```
+
+Bridge returns `EXTRACTION_COMPLETED` with `raw_dataset`.
+
+**Step 11**
+Module 2 receives `EXTRACTION_COMPLETED`.
+
+Decision:
+```json
+{
+  "workflow_id": "req-004",
+  "target_module": "validate_output",
+  "next_event": "QA_REQUIRED",
+  "reasoning": "Raw dataset exists, validation is next.",
+  "confidence": 0.95
+}
+```
+
+**Step 12**
+Module 3 validation runs:
+```json
+{
+  "event_name": "qa_validated",
+  "payload": {
+    "validated_data": {
+      "title": "mock_title",
+      "content": "mock_content",
+      "source_url": "https://example.com/research"
+    }
+  },
+  "confidence_score": 0.91
+}
+```
+
+**Step 13**
+This is terminal.
+
+Bridge writes:
+```json
+[
+  {
+    "kind": "validated_dataset",
+    "content": {
+      "validatedData": {
+        "title": "mock_title",
+        "content": "mock_content",
+        "source_url": "https://example.com/research"
+      }
+    }
+  },
+  {
+    "kind": "final_result",
+    "content": {
+      "validatedData": {
+        "title": "mock_title",
+        "content": "mock_content",
+        "source_url": "https://example.com/research"
+      },
+      "traceabilityLog": ["..."]
+    }
+  }
+]
+```
+
+**Step 14**
+Workflow ends.
+
+Final result:
+```json
+{
+  "requestId": "req-004",
+  "status": "completed",
+  "validatedData": {
+    "title": "mock_title",
+    "content": "mock_content",
+    "source_url": "https://example.com/research"
+  }
+}
+```
+
+---
+
+**Condensed comparison**
+
+**Failure Case 1**
+- extraction fails once
+- Module 2 gets `EXTRACTION_FAILED`
+- Module 2 retries
+- retry succeeds
+- validation completes
+- final result produced
+
+**Failure Case 2**
+- extraction fails
+- retry fails again
+- Module 2 decides `HITL_REQUIRED`
+- workflow pauses
+
+**Failure Case 3**
+- extraction technically succeeds
+- confidence too low
+- bridge sends `LOW_CONFIDENCE_DETECTED`
+- Module 2 decides retry or HITL
+
+**Normal Case**
+- assessment
+- discovery
+- extraction plan
+- execution context
+- extraction
+- validation
+- final result
+
+If you want, I can next turn these into a **single sequence diagram style simulation** with arrows like:
+
+`Module 1 -> Module 2 -> Bridge -> Module 3 -> Bridge -> Module 2`
+
+for all 4 cases.

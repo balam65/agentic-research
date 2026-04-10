@@ -163,12 +163,13 @@ app.post("/api/v1/intake", async (req, res) => {
         };
 
         // Step 5: Hand the validated Module 1 event to the intelligence layer
-        const routingDecision = await orchestratorRouter.handleEvent(finalWorldModelEvent);
+        const workflowRun = await orchestratorRouter.handleEvent(finalWorldModelEvent);
 
-        // Return both the Module 1 event and the intelligence routing decision
+        // Return the Module 1 event plus the integrated workflow result
         return res.status(200).json({
             module_1_event: finalWorldModelEvent,
-            routing_decision: routingDecision
+            workflow_result: workflowRun,
+            routing_decision: workflowRun.last_decision
         });
 
     } catch (err) {

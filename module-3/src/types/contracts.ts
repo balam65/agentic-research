@@ -32,6 +32,7 @@ export interface Module2ExecutionRequest {
     max_budget?: number;
     max_time_ms?: number;
     expected_schema: Record<string, string | object>;
+    artifacts?: Record<string, unknown>;
   };
   constraints?: {
     timeout_ms?: number;
@@ -46,6 +47,27 @@ export interface Module2ExecutionRequest {
     timestamp?: string;
     source_module?: string;
   };
+}
+
+export type Module3CapabilityTarget =
+  | "assess_request"
+  | "discover_targets"
+  | "generate_extractor"
+  | "acquire_execution_context"
+  | "extract_data"
+  | "validate_output"
+  | "deliver_result";
+
+export interface Module3ExecutionOutcome {
+  workflow_id: string;
+  decision_id: string;
+  target_capability: string;
+  status: "intermediate" | "final" | "hitl" | "failed";
+  produced_event: PipelineEvent;
+  traceability_log: TraceabilityEntry[];
+  confidence_score: number;
+  validated_data?: unknown;
+  delivery_receipt?: Record<string, unknown>;
 }
 
 export interface TraceabilityEntry {

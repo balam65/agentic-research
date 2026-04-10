@@ -11,11 +11,14 @@ import {
   RoutingDecision,
   ValidatedInputEvent,
   WorkflowEventInput,
+  WorkflowRunResult,
 } from '../world_model/schema.js';
 import { RequestAnalyzer } from './analyzer.js';
+import { validateModelRuntimeConfig } from './configValidator.js';
+import { assertRoutingDecision, assertWorkflowEventInput } from './eventValidator.js';
 import { InMemoryEventDispatcher } from './events.js';
-import { getModelConfig } from './model_config.js';
 import { IntelligenceAgent } from './intelligence_agent.js';
+import { Module3ExecutionBridge } from './module3ExecutionBridge.js';
 import { DynamicPlanner } from './planner.js';
 import { GovernancePolicy } from './policy.js';
 import { DynamicRouter } from './router.js';
@@ -40,6 +43,7 @@ export class AgenticOrchestrator {
   private readonly policy = new GovernancePolicy();
   private readonly router = new DynamicRouter();
   private readonly dispatcher = new InMemoryEventDispatcher();
+  private readonly module3Bridge = new Module3ExecutionBridge();
   private readonly intelligenceAgent = new IntelligenceAgent(
     new URL('../context/intelligence-system-prompt.md', import.meta.url),
     new URL('../context/', import.meta.url),
@@ -61,6 +65,7 @@ export class AgenticOrchestrator {
   }
 
   async handleEvent(event: WorkflowEventInput): Promise<RoutingDecision> {
+    assertWorkflowEventInput(event);
     await this.boot();
     const workflowId = this.ensureWorkflow(event);
 
@@ -90,7 +95,7 @@ export class AgenticOrchestrator {
     }
 
     const policyDecision = this.policy.evaluate(event, workflowState, world);
-    if (!policyDecision.allowRouting) {
+    if (!policyDecision.allowRouting && policyDecision.forceNextEvent !== 'RETRY_REQUIRED') {
       const decision = this.router.createDecision({
         workflowId,
         selectedCapability: null,
@@ -107,8 +112,8 @@ export class AgenticOrchestrator {
       return decision;
     }
 
-    const candidates = await this.planner.scoreCapabilities(world, this.capabilities);
-    const candidateIds = candidates.map((candidate) => candidate.capability.descriptor.id);
+    const plannerAdvisories = await this.planner.scoreCapabilities(world, this.capabilities);
+    const candidateIds = this.capabilities.map((capability) => capability.descriptor.id);
     if (candidateIds.length === 0) {
       const noCandidateDecision = this.router.createDecision({
         workflowId,
@@ -130,31 +135,13 @@ export class AgenticOrchestrator {
     let reasoning = '';
     let confidence = analysis.confidence;
 
-    const config = getModelConfig();
-    if (!config.intelligenceAgentEnabled) {
+    const modelRuntime = validateModelRuntimeConfig();
+    const config = modelRuntime.config;
+    if (!modelRuntime.valid) {
       const unavailable = this.router.createDecision({
         workflowId,
         selectedCapability: null,
-        reasoning: 'Model-driven routing is disabled by configuration.',
-        confidence: analysis.confidence,
-        requiresHumanReview: true,
-        event,
-        decisionSource: 'control_policy',
-        status: 'blocked',
-        nextEventOverride: 'MODEL_UNAVAILABLE',
-      });
-      this.syncTaskStatusFromDecision(workflowId, unavailable);
-      this.recordDecision(workflowId, unavailable);
-      return unavailable;
-    }
-
-    const canCallModel =
-      config.apiKey.trim().length > 0 || config.provider === 'local' || config.provider === 'lmstudio';
-    if (!canCallModel) {
-      const unavailable = this.router.createDecision({
-        workflowId,
-        selectedCapability: null,
-        reasoning: 'Model configuration does not allow a request (missing key for non-local provider).',
+        reasoning: modelRuntime.reason ?? 'Model configuration is invalid.',
         confidence: analysis.confidence,
         requiresHumanReview: true,
         event,
@@ -174,6 +161,9 @@ export class AgenticOrchestrator {
         event,
         workflowState,
         candidateCapabilityIds: candidateIds,
+        plannerAdvisories: Object.fromEntries(
+          plannerAdvisories.map((entry) => [entry.capability.descriptor.id, { score: entry.score, rationale: entry.rationale }]),
+        ),
       });
       selectedCapability = this.capabilities.find(
         (capability) => capability.descriptor.id === aiDecision.selected_capability_id,
@@ -277,6 +267,9 @@ export class AgenticOrchestrator {
       nextEventOverride: selectedCapability ? undefined : 'MODEL_UNAVAILABLE',
     });
     this.syncTaskStatusFromDecision(workflowId, decision);
+    if (selectedCapability) {
+      this.store.recordCapabilitySelection(workflowId, selectedCapability.descriptor.id, reasoning);
+    }
     this.store.updateWorkflowState(workflowId, (state) => {
       const awareness = new WorkflowAwareness(state);
       if (decision.target_module) {
@@ -286,6 +279,43 @@ export class AgenticOrchestrator {
     });
     this.recordDecision(workflowId, decision);
     return decision;
+  }
+
+  async handleEventLoop(event: WorkflowEventInput): Promise<WorkflowRunResult> {
+    let currentEvent: WorkflowEventInput = event;
+    let lastDecision: RoutingDecision | null = null;
+
+    for (;;) {
+      const decision = await this.handleEvent(currentEvent);
+      lastDecision = decision;
+
+      if (!this.requiresExecution(decision)) {
+        return {
+          workflow_id: decision.workflow_id,
+          terminal: true,
+          terminal_reason: decision.reasoning,
+          last_decision: decision,
+          output: this.toOutput(decision.workflow_id),
+        };
+      }
+
+      const world = this.store.getWorldView(decision.workflow_id);
+      const executionOutcome = await this.module3Bridge.execute(decision, world, currentEvent);
+
+      if (executionOutcome.kind === 'downstream_event') {
+        currentEvent = executionOutcome.event;
+        continue;
+      }
+
+      this.persistTerminalExecutionOutcome(decision.workflow_id, decision.target_module, executionOutcome);
+      return {
+        workflow_id: decision.workflow_id,
+        terminal: true,
+        terminal_reason: executionOutcome.reason,
+        last_decision: lastDecision,
+        output: this.toOutput(decision.workflow_id),
+      };
+    }
   }
 
   async submit(input: NonNegotiableInput): Promise<string> {
@@ -322,7 +352,7 @@ export class AgenticOrchestrator {
       confidence_score: 1,
       justification: 'Input submitted through legacy submit interface.',
     };
-    await this.handleEvent(event);
+    await this.handleEventLoop(event);
     return input.requestId;
   }
 
@@ -353,6 +383,16 @@ export class AgenticOrchestrator {
 
   getStore(): WorldModelStore {
     return this.store;
+  }
+
+  private requiresExecution(decision: RoutingDecision): boolean {
+    return (
+      decision.target_module !== null &&
+      !decision.requires_human_review &&
+      !['WORKFLOW_COMPLETED', 'WORKFLOW_FAILED', 'HITL_REQUIRED', 'MODEL_UNAVAILABLE', 'NO_ACTION_REQUIRED'].includes(
+        decision.next_event,
+      )
+    );
   }
 
   private ensureWorkflow(event: WorkflowEventInput): string {
@@ -436,6 +476,7 @@ export class AgenticOrchestrator {
   }
 
   private recordDecision(workflowId: string, decision: RoutingDecision): void {
+    assertRoutingDecision(decision);
     this.store.recordRoutingDecision(workflowId, decision);
     void this.dispatcher.publishDecision(decision);
   }
@@ -454,5 +495,45 @@ export class AgenticOrchestrator {
       return;
     }
     this.store.updateTaskStatus(workflowId, 'active', decision.reasoning);
+  }
+
+  private persistTerminalExecutionOutcome(
+    workflowId: string,
+    stage: string | null,
+    outcome: Extract<Awaited<ReturnType<Module3ExecutionBridge['execute']>>, { kind: 'terminal' }>,
+  ): void {
+    for (const nextArtifact of outcome.artifacts) {
+      this.store.recordArtifact(workflowId, nextArtifact);
+    }
+
+    this.store.updateWorkflowState(workflowId, (state) => {
+      const awareness = new WorkflowAwareness(state);
+      const nextState =
+        stage && outcome.status === 'completed'
+          ? awareness.markStageCompleted(stage)
+          : stage && outcome.status === 'failed'
+            ? awareness.markStageFailed(stage)
+            : state;
+
+      return {
+        ...nextState,
+        currentStatus:
+          outcome.status === 'completed'
+            ? 'completed'
+            : outcome.status === 'waiting_for_human'
+              ? 'waiting_for_human'
+              : 'failed',
+      };
+    });
+
+    if (outcome.status === 'completed') {
+      this.store.updateTaskStatus(workflowId, 'completed', outcome.reason);
+      return;
+    }
+    if (outcome.status === 'waiting_for_human') {
+      this.store.updateTaskStatus(workflowId, 'waiting_for_human', outcome.reason);
+      return;
+    }
+    this.store.updateTaskStatus(workflowId, 'failed', outcome.reason);
   }
 }

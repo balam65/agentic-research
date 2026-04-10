@@ -28,5 +28,5 @@ const orchestrator = new AgenticOrchestrator(store, registry);
 
 await orchestrator.boot();
 
-const decision = await orchestrator.handleEvent(event);
-process.stdout.write(JSON.stringify(decision));
+const result = await orchestrator.handleEventLoop(event);
+process.stdout.write(JSON.stringify(result));

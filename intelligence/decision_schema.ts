@@ -29,5 +29,6 @@ export function parseAgentDecision(raw: string): AgentDecision {
     missing_information: Array.isArray(parsed.missing_information)
       ? parsed.missing_information.filter((item): item is string => typeof item === 'string')
       : [],
+    requested_next_event: typeof parsed.requested_next_event === 'string' ? parsed.requested_next_event : undefined,
   };
 }

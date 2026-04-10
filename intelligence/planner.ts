@@ -8,6 +8,16 @@ export interface CapabilityDecision {
   rationale: string;
 }
 
+function normalizeAdvisoryScore(rawScore: number, outputsMatchGoal: boolean): number {
+  if (Number.isNaN(rawScore) || rawScore < 0) {
+    return outputsMatchGoal ? 0.35 : 0.15;
+  }
+  if (rawScore === 0) {
+    return outputsMatchGoal ? 0.4 : 0.2;
+  }
+  return Math.min(1, Math.max(0.1, rawScore));
+}
+
 export class DynamicPlanner {
   async scoreCapabilities(world: WorldView, capabilities: CapabilityModule[]): Promise<CapabilityDecision[]> {
     const awareness = new SituationalAwareness(world);
@@ -15,23 +25,27 @@ export class DynamicPlanner {
 
     const scored = await Promise.all(
       capabilities.map(async (capability) => {
-        const score = await capability.canHandle({
+        const rawScore = await capability.canHandle({
           store: undefined as never,
           task: world.task,
           world,
           input: world.task.input,
         });
-        return { capability, score };
+        const outputsMatchGoal = capability.descriptor.outputs.some((output) => missingGoals.includes(output));
+        return {
+          capability,
+          score: normalizeAdvisoryScore(rawScore, outputsMatchGoal),
+          outputsMatchGoal,
+        };
       }),
     );
 
     return scored
-      .filter((entry) => entry.score > 0)
       .sort((left, right) => right.score - left.score)
       .map((entry) => ({
         capability: entry.capability,
         score: entry.score,
-        rationale: `Planner scored '${entry.capability.descriptor.id}' at ${entry.score.toFixed(2)} with missing goals: ${missingGoals.join(', ') || 'none'}.`,
+        rationale: `Planner advisory for '${entry.capability.descriptor.id}' is ${entry.score.toFixed(2)} with missing goals: ${missingGoals.join(', ') || 'none'} and output overlap ${entry.outputsMatchGoal ? 'present' : 'absent'}.`,
       }));
   }
 

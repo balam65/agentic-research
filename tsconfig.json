@@ -16,6 +16,7 @@
     "world_model/**/*.ts",
     "capabilities/**/*.ts",
     "intelligence/**/*.ts",
+    "module-3/src/**/*.ts",
     "context/**/*.ts",
     "surface/**/*.ts",
     "interfaces/**/*.ts",

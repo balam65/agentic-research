@@ -9,6 +9,7 @@ export * from "./runtime/eventBus";
 export * from "./runtime/capabilityRegistry";
 export * from "./runtime/hitlPolicyEngine";
 export * from "./runtime/pipelineEngine";
+export * from "./runtime/stageExecutor";
 export * from "./runtime/defaultCapabilities";
 export * from "./capabilities/assessmentService";
 export * from "./capabilities/schedulingService";
