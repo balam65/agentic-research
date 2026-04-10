@@ -1,38 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
-import * as dotenv from 'dotenv';
-import * as path from 'path';
 
-// Load .env file variables from the root folder (where you created it)
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
-dotenv.config(); // Also try current dir just in case
+// Initialize Supabase Client
+// Note: In production, these should be securely injected via environment variables.
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Based on Intern 3 DB Schema
-export interface WorldEvent {
-  job_id: string; // Foreign key to research_jobs
-  event_type: string;
-  source: string;
-  message?: string;
-  payload?: any;
-}
-
-export interface ExtractedData {
-  job_id: string;
-  source_url: string;
-  content: any; // JSONB
-  confidence: number;
-  is_validated?: boolean;
-}
-
-export interface CapabilityRegistry {
-  name: string;
-  version?: string;
-  is_active?: boolean;
-  description?: string;
-  config?: any;
+export interface WorldModelEvent {
+  event_name: string;
+  source_agent_run_id: string;
+  entity_id?: string;
+  payload: any;
+  confidence_score: number;
+  justification: string;
 }
 
 /**
@@ -40,19 +21,18 @@ export interface CapabilityRegistry {
  * This enables the World Model by providing a single source of truth 
  * for situational awareness across all capabilities and agents.
  */
-export class DatabaseStore {
+export class WorldModelStore {
   /**
-   * 1. Reporting State (world_events table)
-   * Do not just use console.log! Every action must insert here.
+   * Write an event to the shared event bus (Supabase PostgreSQL)
    */
-  async logEvent(event: WorldEvent) {
+  async publishEvent(eventData: WorldModelEvent) {
     const { data, error } = await supabase
-      .from('world_events')
-      .insert([event])
+      .from('world_model_events')
+      .insert([eventData])
       .select();
       
     if (error) {
-      console.error('Failed to log event to world_events', error);
+      console.error('Failed to publish event to World Model', error);
       throw error;
     }
     
@@ -60,49 +40,25 @@ export class DatabaseStore {
   }
 
   /**
-   * 2. Saving Results (extracted_data table)
+   * Retrieve recent state or events for situational awareness
    */
-  async saveExtractedData(dataRecord: ExtractedData) {
-    const { data, error } = await supabase
-      .from('extracted_data')
-      .insert([dataRecord])
-      .select();
-      
-    if (error) {
-      console.error('Failed to save extracted data', error);
-      throw error;
-    }
-    
-    return data;
-  }
-
-  /**
-   * 3. Reading the Contract (research_jobs table)
-   */
-  async getJob(job_id: string) {
-    const { data, error } = await supabase
-      .from('research_jobs')
+  async getRecentEvents(eventName?: string, limit = 100) {
+    let query = supabase
+      .from('world_model_events')
       .select('*')
-      .eq('id', job_id)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(limit);
       
+    if (eventName) {
+      query = query.eq('event_name', eventName);
+    }
+    
+    const { data, error } = await query;
     if (error) {
-      console.error(`Failed to retrieve job ${job_id}`, error);
+      console.error('Failed to retrieve events', error);
       throw error;
     }
     
-    return data; // contains input_params JSONB
-  }
-
-  /**
-   * Status updates for research_jobs routing
-   */
-  async updateJobStatus(job_id: string, status: 'pending' | 'running' | 'hitl_alert' | 'completed' | 'failed') {
-    const { error } = await supabase
-      .from('research_jobs')
-      .update({ status })
-      .eq('id', job_id);
-      
-    if (error) throw error;
+    return data;
   }
 }
