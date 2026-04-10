@@ -35,6 +35,7 @@ diagrams/*.png
 
 # Logs
 *.log
+logs/
 
 # Environment
 .env

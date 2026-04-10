@@ -3,6 +3,7 @@ dns.setDefaultResultOrder("ipv4first");
 
 import express from "express";
 import path from "path";
+import fs from "fs";
 import cors from "cors";
 import dotenv from "dotenv";
 import swaggerUi from "swagger-ui-express";
@@ -59,7 +60,13 @@ app.use(express.json());
 
 // Request Logger
 app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    const logEntry = `[${new Date().toISOString()}] ${req.method} ${req.path}\n`;
+    console.log(logEntry.trim());
+    
+    const logsDir = path.resolve(__dirname, "..", "logs");
+    if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir);
+    fs.appendFileSync(path.join(logsDir, "api.log"), logEntry);
+    
     next();
 });
 
@@ -106,6 +113,11 @@ app.post("/api/v1/intake", async (req, res) => {
 
         const data = openRouterRes.data;
         const llmContent = data.choices[0].message.content;
+
+        // Log OpenRouter interaction
+        const logsDir = path.resolve(__dirname, "..", "logs");
+        const llmLogEntry = `[${new Date().toISOString()}] PROMPT: ${JSON.stringify(messages)}\nRESPONSE: ${llmContent}\n---\n`;
+        fs.appendFileSync(path.join(logsDir, "openrouter.log"), llmLogEntry);
 
         // Step 2: Extract JSON 
         let parsedPayload;
