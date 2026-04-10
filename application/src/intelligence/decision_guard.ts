@@ -24,14 +24,10 @@ export class DecisionGuard {
       return { valid: false, reason: `Unknown capability '${decision.selected_capability_id}'.` };
     }
 
-    if (
-      candidateCapabilityIds &&
-      candidateCapabilityIds.length > 0 &&
-      !candidateCapabilityIds.includes(decision.selected_capability_id)
-    ) {
+    if (candidateCapabilityIds && candidateCapabilityIds.length === 0) {
       return {
         valid: false,
-        reason: `Capability '${decision.selected_capability_id}' is not in the current viable candidate set.`,
+        reason: 'No allowed capabilities are available for model selection.',
       };
     }
 

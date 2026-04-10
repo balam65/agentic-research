@@ -1,18 +1,18 @@
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 
-import type { RoutingDecision, ValidatedInputEvent } from '../world_model/schema';
+import type { ValidatedInputEvent, WorkflowRunResult } from '../../../world_model/schema';
 
 /**
  * Bridge the CommonJS application server to the ESM intelligence layer by
  * delegating routing to a short-lived child process running ts-node's ESM loader.
  */
 export class OrchestratorRouter {
-  async handleEvent(event: ValidatedInputEvent): Promise<RoutingDecision> {
-    const bridgeScript = resolve(__dirname, 'run_intelligence_bridge.mjs');
-    const tsxPath = resolve(__dirname, '../../node_modules/tsx/dist/cli.mjs');
+  async handleEvent(event: ValidatedInputEvent): Promise<WorkflowRunResult> {
+    const bridgeScript = resolve(__dirname, '../../../interfaces/submit_request.ts');
+    const tsNodeEsmLoader = resolve(__dirname, '../../node_modules/ts-node/esm.mjs');
 
-    return new Promise<RoutingDecision>((resolvePromise, rejectPromise) => {
+    return new Promise<WorkflowRunResult>((resolvePromise, rejectPromise) => {
       const child = spawn(
         process.execPath,
         [tsxPath, '--no-warnings', bridgeScript],
@@ -51,9 +51,9 @@ export class OrchestratorRouter {
           
           if (firstBrace !== -1 && lastBrace !== -1) {
              const cleanString = content.substring(firstBrace, lastBrace + 1);
-             resolvePromise(JSON.parse(cleanString) as RoutingDecision);
+             resolvePromise(JSON.parse(cleanString) as WorkflowRunResult);
           } else {
-             resolvePromise(JSON.parse(content) as RoutingDecision);
+             resolvePromise(JSON.parse(content) as WorkflowRunResult);
           }
         } catch (error) {
           rejectPromise(

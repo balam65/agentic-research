@@ -29,10 +29,10 @@ async function main(): Promise<void> {
     event = JSON.parse(stdinPayload);
   }
 
-  const decision = await orchestrator.handleEvent(event);
+  const result = await orchestrator.handleEventLoop(event);
   
   // Output solely the final decision JSON to stdout so the router can parse it properly
-  process.stdout.write(JSON.stringify(decision));
+  process.stdout.write(JSON.stringify(result));
 }
 
 void main();

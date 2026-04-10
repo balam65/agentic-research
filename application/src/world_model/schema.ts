@@ -16,12 +16,20 @@ export type WorkflowStatus =
 export type WorkflowInputEventType = 'INPUT_CONTRACT_VALIDATED';
 
 export type WorkflowDownstreamEventType =
+  | 'ASSESSMENT_COMPLETED'
+  | 'ASSESSMENT_FAILED'
   | 'DISCOVERY_COMPLETED'
   | 'DISCOVERY_FAILED'
+  | 'EXTRACTION_PLAN_COMPLETED'
+  | 'EXTRACTION_PLAN_FAILED'
+  | 'EXECUTION_CONTEXT_COMPLETED'
+  | 'EXECUTION_CONTEXT_FAILED'
   | 'EXTRACTION_COMPLETED'
   | 'EXTRACTION_FAILED'
   | 'QA_COMPLETED'
   | 'QA_FAILED'
+  | 'DELIVERY_COMPLETED'
+  | 'DELIVERY_FAILED'
   | 'LOW_CONFIDENCE_DETECTED'
   | 'HITL_APPROVED'
   | 'HITL_REJECTED';
@@ -155,6 +163,14 @@ export interface RoutingDecision {
   requires_human_review: boolean;
   confidence: number;
   decided_at: string;
+}
+
+export interface WorkflowRunResult {
+  workflow_id: string;
+  terminal: boolean;
+  terminal_reason: string;
+  last_decision: RoutingDecision | null;
+  output: NonNegotiableOutput;
 }
 
 export interface WorkflowState {

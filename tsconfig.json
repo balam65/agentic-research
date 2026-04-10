@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "world_model/**/*.ts",
+    "capabilities/**/*.ts",
+    "intelligence/**/*.ts",
+    "module-3/src/**/*.ts",
+    "context/**/*.ts",
+    "surface/**/*.ts",
+    "interfaces/**/*.ts",
+    "evaluation/**/*.ts",
+    "application/src/orchestrator/router.ts"
+  ]
+}

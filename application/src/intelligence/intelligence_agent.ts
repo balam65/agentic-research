@@ -14,6 +14,8 @@ interface CapabilityPromptContext {
   outputs: string[];
   executionContract: string;
   tags: string[];
+  plannerScore?: number;
+  plannerRationale?: string;
   descriptorText?: string;
 }
 
@@ -82,6 +84,7 @@ export class IntelligenceAgent {
     event: WorkflowEventInput;
     workflowState: WorkflowState;
     candidateCapabilityIds: string[];
+    plannerAdvisories?: Record<string, { score: number; rationale: string }>;
   }): Promise<AgentDecision> {
     const systemPrompt = await readFile(this.systemPromptUrl, 'utf8');
     const capabilityContext = await Promise.all(
@@ -95,6 +98,8 @@ export class IntelligenceAgent {
         outputs: capability.descriptor.outputs,
         executionContract: capability.descriptor.executionContract,
         tags: capability.descriptor.tags,
+        plannerScore: params.plannerAdvisories?.[capability.descriptor.id]?.score,
+        plannerRationale: params.plannerAdvisories?.[capability.descriptor.id]?.rationale,
         descriptorText: await this.tryReadDescriptor(capability.descriptor.id),
       })),
     );
@@ -124,6 +129,7 @@ export class IntelligenceAgent {
       'Choose the next capability dynamically from the provided registry.',
       'Do not assume a fixed pipeline. Use only current world state, capability contracts, and the non-negotiable output goals.',
       'Use incoming event and workflow state to reason about what should happen next.',
+      'Planner scores are advisory hints only. They are not mandatory workflow rules.',
       'Return JSON with keys: selected_capability_id, reasoning_summary, requires_human_review, stop_execution, confidence, missing_information, requested_next_event.',
       '',
       `WORLD_STATE_JSON:\n${JSON.stringify(worldSummary, null, 2)}`,
