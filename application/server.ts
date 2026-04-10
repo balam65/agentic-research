@@ -1,3 +1,6 @@
+import dns from "node:dns";
+dns.setDefaultResultOrder("ipv4first");
+
 import express from "express";
 import path from "path";
 import cors from "cors";
@@ -79,23 +82,29 @@ app.post("/api/v1/intake", async (req, res) => {
     try {
         // Step 1: Forward conversational context securely to LLM
         // We prepend the SYSTEM_PROMPT to ensure the LLM follows instructions
-        const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
+        const baseURL = process.env.MODEL_BASE_URL || "https://openrouter.ai/api";
+        const endpoint = process.env.MODEL_CHAT_ENDPOINT || "/v1/chat/completions";
+        const modelName = process.env.MODEL_NAME || "openai/gpt-4o-mini";
+        const customApiKey = process.env.MODEL_API_KEY || apiKey;
+        const targetUrl = `${baseURL}${endpoint}`;
+
+        const axios = require("axios");
+        const openRouterRes = await axios.post(targetUrl, {
+            model: modelName,
+            messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages]
+        }, {
             headers: {
-                "Authorization": `Bearer ${apiKey}`,
+                "Authorization": `Bearer ${customApiKey}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                model: "openai/gpt-4o-mini",
-                messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages]
-            })
+            validateStatus: () => true
         });
 
-        if (!openRouterRes.ok) {
+        if (openRouterRes.status < 200 || openRouterRes.status >= 300) {
             throw new Error(`OpenRouter API emitted status ${openRouterRes.status}`);
         }
 
-        const data = await openRouterRes.json();
+        const data = openRouterRes.data;
         const llmContent = data.choices[0].message.content;
 
         // Step 2: Extract JSON 
@@ -129,7 +138,7 @@ app.post("/api/v1/intake", async (req, res) => {
             proxy_tier: validatedPayload.constraints.proxy_tier,
             anti_bot_risk: validatedPayload.constraints.anti_bot_risk,
             authentication_required: validatedPayload.constraints.authentication_required
-        };
+        }
 
         if (validatedPayload.constraints.max_time_ms !== undefined) {
             normalizedConstraints.max_time_ms = validatedPayload.constraints.max_time_ms;

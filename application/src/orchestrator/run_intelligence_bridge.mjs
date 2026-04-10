@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -11,7 +11,7 @@ const { CapabilityRegistry } = registryModule;
 const { AgenticOrchestrator } = orchestratorModule;
 const { WorldModelStore } = eventStoreModule;
 
-const stdin = await readFile(process.stdin.fd, 'utf8');
+const stdin = readFileSync(0, 'utf8');
 const event = JSON.parse(stdin);
 
 const store = new WorldModelStore();
