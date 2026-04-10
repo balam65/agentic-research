@@ -9,7 +9,7 @@ import type { RoutingDecision, ValidatedInputEvent } from '../../../world_model/
  */
 export class OrchestratorRouter {
   async handleEvent(event: ValidatedInputEvent): Promise<RoutingDecision> {
-    const bridgeScript = resolve(__dirname, './run_intelligence_bridge.mjs');
+    const bridgeScript = resolve(__dirname, '../../../interfaces/submit_request.ts');
     const tsNodeEsmLoader = resolve(__dirname, '../../node_modules/ts-node/esm.mjs');
 
     return new Promise<RoutingDecision>((resolvePromise, rejectPromise) => {
