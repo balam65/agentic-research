@@ -2,6 +2,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+// Redirect all informative console outputs to stderr to avoid corrupting stdout JSON payloads
+console.log = console.error;
+console.info = console.error;
+console.debug = console.error;
+console.warn = console.error;
+
 const baseDir = resolve(import.meta.dirname, '../../..');
 const registryModule = await import(pathToFileURL(resolve(baseDir, 'capabilities/registry.ts')).href);
 const orchestratorModule = await import(pathToFileURL(resolve(baseDir, 'intelligence/orchestrator.ts')).href);

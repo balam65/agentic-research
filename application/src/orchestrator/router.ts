@@ -44,7 +44,17 @@ export class OrchestratorRouter {
         }
 
         try {
-          resolvePromise(JSON.parse(stdout) as RoutingDecision);
+          // Robustly handle cases where dependencies leak text into stdout by finding the JSON boundary
+          const content = stdout.trim();
+          const firstBrace = content.indexOf('{');
+          const lastBrace = content.lastIndexOf('}');
+          
+          if (firstBrace !== -1 && lastBrace !== -1) {
+             const cleanString = content.substring(firstBrace, lastBrace + 1);
+             resolvePromise(JSON.parse(cleanString) as RoutingDecision);
+          } else {
+             resolvePromise(JSON.parse(content) as RoutingDecision);
+          }
         } catch (error) {
           rejectPromise(
             new Error(
