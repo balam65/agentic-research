@@ -327,7 +327,7 @@ export default function Page() {
 
       const downloadUrl =
         result.download_url ??
-        `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "http://192.168.1.250:8000"}/download?client_id=${encodeURIComponent(effectiveClient)}&format=csv`;
+        `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "http://localhost:8000"}/download?client_id=${encodeURIComponent(effectiveClient)}&format=csv`;
       const link = document.createElement("a");
       link.href = downloadUrl;
       link.download = result.filename ?? `${effectiveClient}-delivery.csv`;

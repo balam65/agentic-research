@@ -25,7 +25,7 @@ This repository now includes a production-ready output and delivery module with:
 1. `cd frontend`
 2. `npm install`
 3. `cp .env.example .env.local`
-4. Set `NEXT_PUBLIC_API_BASE_URL=http://192.168.1.250:8000`
+4. Set `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000`
 5. Run the dashboard:
    - `npm run dev`
 

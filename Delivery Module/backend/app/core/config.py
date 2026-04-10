@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     app_debug: bool = False
     api_prefix: str = ""
     allowed_origins: list[str] = Field(
-        default_factory=lambda: ["http://192.168.1.250:3000"]
+        default_factory=lambda: ["http://localhost:3000"]
     )
 
     supabase_url: str
@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     mail_gmail_send_url: str = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
 
     request_timeout_seconds: float = 15.0
-    api_base_url: str = "http://192.168.1.250:8000"
+    api_base_url: str = "http://localhost:8000"
     supabase_retry_attempts: int = 3
     supabase_retry_delay_seconds: float = 0.5
     supabase_timeout_seconds: float = 5.0
