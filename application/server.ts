@@ -12,7 +12,6 @@ import { v4 as uuidv4 } from "uuid";
 import { JobRequestSchema } from "./src/module_1/schema";
 import { OrchestratorRouter } from "./src/orchestrator/router";
 import { ValidatedInputEvent } from "../world_model/schema";
-import axios from "axios";
 
 const SYSTEM_PROMPT = `
 You are the "Input Contract Module" (Module 1) for an Elite Web Scraping framework. 
@@ -64,8 +63,8 @@ app.use((req, res, next) => {
     const logEntry = `[${new Date().toISOString()}] ${req.method} ${req.path}\n`;
     console.log(logEntry.trim());
     
-    const logsDir = path.resolve(__dirname, "logs");
-    if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
+    const logsDir = path.resolve(__dirname, "..", "logs");
+    if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir);
     fs.appendFileSync(path.join(logsDir, "api.log"), logEntry);
     
     next();
@@ -96,6 +95,7 @@ app.post("/api/v1/intake", async (req, res) => {
         const customApiKey = process.env.MODEL_API_KEY || apiKey;
         const targetUrl = `${baseURL}${endpoint}`;
 
+        const axios = require("axios");
         const openRouterRes = await axios.post(targetUrl, {
             model: modelName,
             messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages]
@@ -115,8 +115,7 @@ app.post("/api/v1/intake", async (req, res) => {
         const llmContent = data.choices[0].message.content;
 
         // Log OpenRouter interaction
-        const logsDir = path.resolve(__dirname, "logs");
-        if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
+        const logsDir = path.resolve(__dirname, "..", "logs");
         const llmLogEntry = `[${new Date().toISOString()}] PROMPT: ${JSON.stringify(messages)}\nRESPONSE: ${llmContent}\n---\n`;
         fs.appendFileSync(path.join(logsDir, "openrouter.log"), llmLogEntry);
 
@@ -185,12 +184,8 @@ app.post("/api/v1/intake", async (req, res) => {
         });
 
     } catch (err) {
-        console.error("GATEWAY_ERROR:", err);
-        return res.status(500).json({ 
-            error: "Fatal Internal Error processing LLM Intent.",
-            details: err instanceof Error ? err.message : String(err),
-            stack: process.env.NODE_ENV === "development" ? (err instanceof Error ? err.stack : undefined) : undefined
-        });
+        console.error(err);
+        return res.status(500).json({ error: "Fatal Internal Error processing LLM Intent." });
     }
 });
 
@@ -198,6 +193,7 @@ app.post("/api/v1/intake", async (req, res) => {
 app.listen(Number(PORT), "0.0.0.0", () => {
     console.log(`\n============================================`);
     console.log(`🚀 Module 1 Backend Server Running`);
+    console.log(`🔗 Local Testing:   http://localhost:${PORT}`);
     console.log(`🔗 Swagger UI Docs: http://localhost:${PORT}/docs`);
     console.log(`============================================\n`);
 });
