@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 
-import type { ValidatedInputEvent, WorkflowRunResult } from '../../../world_model/schema';
+import type { ValidatedInputEvent, WorkflowRunResult } from '../../src/world_model/schema';
 
 /**
  * Bridge the CommonJS application server to the ESM intelligence layer by
@@ -15,7 +15,7 @@ export class OrchestratorRouter {
     return new Promise<WorkflowRunResult>((resolvePromise, rejectPromise) => {
       const child = spawn(
         process.execPath,
-        [tsxPath, '--no-warnings', bridgeScript],
+        [tsNodeEsmLoader, '--no-warnings', bridgeScript],
         {
           cwd: resolve(__dirname, '../..'),
           stdio: ['pipe', 'pipe', 'pipe'],
