@@ -1,75 +1,13 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Module 1: AI Intake Gateway</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
-</head>
-<body>
-    <div class="background-mesh"></div>
-    
-    <div class="container">
-        <!-- AI Chat Interface -->
-        <main class="intake-panel glass-card">
-            <header>
-                <h1>✨ Module 1: AI-Powered Intake</h1>
-                <p>Type your scraping request in plain English. The LLM will automatically extract targets, rules, and generate the schema!</p>
-            </header>
-
-            <div class="api-config" style="display: none;">
-                <!-- Security Update: Key processing moved to Backend -->
-                <input type="hidden" id="openRouterKey" value="backend-managed" />
-            </div>
-
-            <section class="templates">
-                <h3>Quick Examples</h3>
-                <div class="button-group">
-                    <button class="btn-template" onclick="loadPrompt('flight')">✈️ Flight Details</button>
-                    <button class="btn-template" onclick="loadPrompt('amazon')">📦 Amazon Search</button>
-                </div>
-            </section>
-
-            <div class="chat-container">
-                <div id="chatHistory" class="chat-history"></div>
-                <div class="input-wrapper">
-                    <textarea id="aiPrompt" rows="3" placeholder="Example: scrape the flight price details of air india from delhi to detroit..."></textarea>
-                </div>
-            </div>
-
-            <button type="button" class="btn-primary" onclick="simulateLLMModule1()">
-                <div id="btnText">GENERATE MODULE 2 PAYLOAD 🚀</div>
-                <div id="btnLoading" class="loader" style="display:none;"></div>
-            </button>
-            <div id="apiErrorLog" class="api-err-log"></div>
-        </main>
-
-        <!-- Module 2 Visualization -->
-        <aside class="output-panel glass-card">
-            <header>
-                <h2>🧠 Payload for Module 2</h2>
-                <p>The validated `WorldModelEvent` ready for the Event Router.</p>
-            </header>
-            
-            <div id="statusBadge" class="status-badge waiting">Awaiting Prompt...</div>
-            
-            <div class="code-container">
-                <pre><code id="jsonOutput">// LLM Gateway Idle...</code></pre>
-            </div>
-            
-            <button class="btn-copy" onclick="copyToClipboard()">Copy JSON for Module 2</button>
-            
-            <div class="sim-logs">
-                <h4>System Logs:</h4>
-                <ul id="simLogs">
-                    <li>System ready. Awaiting prompt.</li>
-                </ul>
-            </div>
-        </aside>
-    </div>
-
-    <script src="app.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ui-portal</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
