@@ -1,0 +1,93 @@
+[
+  {
+    "id": "b0d80753-d4b9-419e-8a71-ffe24233b5ec",
+    "type": "task_submitted",
+    "taskId": "task-resume-1776093391610",
+    "createdAt": "2026-04-13T15:16:31.611Z",
+    "payload": {
+      "id": "task-resume-1776093391610",
+      "input": {
+        "requestId": "task-resume-1776093391610",
+        "targetSpec": "example.com",
+        "requestedSchema": {},
+        "constraints": {
+          "budgetUsd": 0,
+          "maxTimeMs": 0,
+          "requiresJsRendering": false,
+          "humanReviewAllowed": false,
+          "proxyTier": "standard",
+          "antiBotRisk": "low",
+          "authenticationRequired": false
+        }
+      },
+      "outputGoal": [
+        "final_result"
+      ],
+      "status": "submitted",
+      "governance": {
+        "humanReviewRequired": false
+      },
+      "createdAt": "2026-04-13T15:16:31.611Z",
+      "updatedAt": "2026-04-13T15:16:31.611Z"
+    }
+  },
+  {
+    "id": "79b10d04-e201-44d6-b477-f964b92c447d",
+    "type": "workflow_event_received",
+    "taskId": "task-resume-1776093391610",
+    "createdAt": "2026-04-13T15:16:31.635Z",
+    "payload": {
+      "event_id": "evt-1",
+      "workflow_id": "task-resume-1776093391610",
+      "event_type": "DISCOVERY_COMPLETED",
+      "timestamp": "2026-04-13T15:16:31.613Z",
+      "payload": {
+        "discovered_url": "https://example.com/research",
+        "artifacts": []
+      },
+      "confidence_score": 1,
+      "justification": "Simulated resume."
+    }
+  },
+  {
+    "id": "5a6bb30f-a637-482f-a4db-abf184c1ba55",
+    "type": "execution_failed",
+    "taskId": "task-resume-1776093391610",
+    "createdAt": "2026-04-13T15:16:31.639Z",
+    "payload": {
+      "source": "intelligence_agent",
+      "message": "ENOENT: no such file or directory, open '/home/ai/Documents/project/agentic-research/application/src/intelligence/intelligence-system-prompt.md'",
+      "retriable": true,
+      "id": "d3a93a24-328e-40f5-8d78-eeeb04a5b669",
+      "taskId": "task-resume-1776093391610",
+      "createdAt": "2026-04-13T15:16:31.639Z"
+    }
+  },
+  {
+    "id": "a449c624-1f1d-4e4a-b23a-078c43dc2832",
+    "type": "task_status_changed",
+    "taskId": "task-resume-1776093391610",
+    "createdAt": "2026-04-13T15:16:31.640Z",
+    "payload": {
+      "status": "failed",
+      "reason": "Model call failed or returned invalid output; execution routing is blocked."
+    }
+  },
+  {
+    "id": "ac9dae0f-0425-40cf-894a-79d3abe14bd2",
+    "type": "routing_decision_emitted",
+    "taskId": "task-resume-1776093391610",
+    "createdAt": "2026-04-13T15:16:31.641Z",
+    "payload": {
+      "workflow_id": "task-resume-1776093391610",
+      "next_event": "MODEL_UNAVAILABLE",
+      "target_module": null,
+      "decision_source": "control_policy",
+      "status": "blocked",
+      "reasoning": "Model call failed or returned invalid output; execution routing is blocked.",
+      "requires_human_review": true,
+      "confidence": 1,
+      "decided_at": "2026-04-13T15:16:31.640Z"
+    }
+  }
+]

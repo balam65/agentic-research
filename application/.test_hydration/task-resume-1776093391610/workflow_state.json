@@ -1,0 +1,36 @@
+{
+  "workflowId": "task-resume-1776093391610",
+  "currentStatus": "blocked",
+  "completedStages": [
+    "discovery"
+  ],
+  "pendingStages": [],
+  "failedStages": [],
+  "routingHistory": [
+    {
+      "workflow_id": "task-resume-1776093391610",
+      "next_event": "MODEL_UNAVAILABLE",
+      "target_module": null,
+      "decision_source": "control_policy",
+      "status": "blocked",
+      "reasoning": "Model call failed or returned invalid output; execution routing is blocked.",
+      "requires_human_review": true,
+      "confidence": 1,
+      "decided_at": "2026-04-13T15:16:31.640Z"
+    }
+  ],
+  "confidenceHistory": [
+    1
+  ],
+  "decisionHistory": [
+    {
+      "timestamp": "2026-04-13T15:16:31.640Z",
+      "summary": "MODEL_UNAVAILABLE"
+    }
+  ],
+  "justifications": [
+    "Simulated resume."
+  ],
+  "retryCount": 0,
+  "lastUpdatedAt": "2026-04-13T15:16:31.641Z"
+}

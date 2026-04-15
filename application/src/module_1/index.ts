@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { JobRequestSchema, ValidatedModuleEvent } from './schema';
+import { JobRequestSchema, ValidatedModuleEvent } from './schema.js';
 
 export class InputContractModule {
   

@@ -1,0 +1,26 @@
+{
+  "id": "task-resume-1776093391610",
+  "input": {
+    "requestId": "task-resume-1776093391610",
+    "targetSpec": "example.com",
+    "requestedSchema": {},
+    "constraints": {
+      "budgetUsd": 0,
+      "maxTimeMs": 0,
+      "requiresJsRendering": false,
+      "humanReviewAllowed": false,
+      "proxyTier": "standard",
+      "antiBotRisk": "low",
+      "authenticationRequired": false
+    }
+  },
+  "outputGoal": [
+    "final_result"
+  ],
+  "status": "failed",
+  "governance": {
+    "humanReviewRequired": false
+  },
+  "createdAt": "2026-04-13T15:16:31.611Z",
+  "updatedAt": "2026-04-13T15:16:31.640Z"
+}

@@ -1,0 +1,10 @@
+[
+  {
+    "source": "intelligence_agent",
+    "message": "ENOENT: no such file or directory, open '/home/ai/Documents/project/agentic-research/application/src/intelligence/intelligence-system-prompt.md'",
+    "retriable": true,
+    "id": "d3a93a24-328e-40f5-8d78-eeeb04a5b669",
+    "taskId": "task-resume-1776093391610",
+    "createdAt": "2026-04-13T15:16:31.639Z"
+  }
+]

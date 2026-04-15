@@ -2,37 +2,37 @@
   "capabilities": [
     {
       "id": "assess_request",
-      "module": "../capabilities/builtins/assess_request.ts",
+      "module": "../agents/builtins/assess_request.ts",
       "descriptor": "./capabilities/assess_request.md"
     },
     {
       "id": "discover_targets",
-      "module": "../capabilities/builtins/discover_targets.ts",
+      "module": "../agents/builtins/discover_targets.ts",
       "descriptor": "./capabilities/discover_targets.md"
     },
     {
       "id": "generate_extractor",
-      "module": "../capabilities/builtins/generate_extractor.ts",
+      "module": "../agents/builtins/generate_extractor.ts",
       "descriptor": "./capabilities/generate_extractor.md"
     },
     {
       "id": "acquire_execution_context",
-      "module": "../capabilities/builtins/acquire_execution_context.ts",
+      "module": "../agents/builtins/acquire_execution_context.ts",
       "descriptor": "./capabilities/acquire_execution_context.md"
     },
     {
       "id": "extract_data",
-      "module": "../capabilities/builtins/extract_data.ts",
+      "module": "../agents/builtins/extract_data.ts",
       "descriptor": "./capabilities/extract_data.md"
     },
     {
       "id": "validate_output",
-      "module": "../capabilities/builtins/validate_output.ts",
+      "module": "../agents/builtins/validate_output.ts",
       "descriptor": "./capabilities/validate_output.md"
     },
     {
       "id": "deliver_result",
-      "module": "../capabilities/builtins/deliver_result.ts",
+      "module": "../agents/builtins/deliver_result.ts",
       "descriptor": "./capabilities/deliver_result.md"
     }
   ]

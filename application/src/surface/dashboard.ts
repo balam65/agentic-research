@@ -1,4 +1,4 @@
-import { WorldModelStore } from '../world_model/event_store.js';
+import { WorldModelStore } from '../memory/world_model_store.js';
 
 export interface DashboardSnapshot {
   tasks: Array<{
@@ -18,12 +18,12 @@ export interface DashboardSnapshot {
   };
 }
 
-export function buildDashboardSnapshot(store: WorldModelStore): DashboardSnapshot {
+export async function buildDashboardSnapshot(store: WorldModelStore): Promise<DashboardSnapshot> {
   const tasks = store.listTasks();
-  return {
-    tasks: tasks.map((task) => {
-      const world = store.getWorldView(task.id);
-      const workflowState = store.getWorkflowState(task.id);
+  const taskViews = await Promise.all(
+    tasks.map(async (task) => {
+      const world = await store.getWorldView(task.id);
+      const workflowState = await store.getWorkflowState(task.id);
       const latestDecision = [...world.events]
         .reverse()
         .find((event) => event.type === 'intelligence_decision_recorded');
@@ -47,6 +47,10 @@ export function buildDashboardSnapshot(store: WorldModelStore): DashboardSnapsho
         completedStages: workflowState.completedStages,
       };
     }),
+  );
+
+  return {
+    tasks: taskViews,
     kpis: {
       totalTasks: tasks.length,
       waitingForHuman: tasks.filter((task) => task.status === 'waiting_for_human').length,

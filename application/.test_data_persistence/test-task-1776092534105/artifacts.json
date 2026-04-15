@@ -1,0 +1,27 @@
+[
+  {
+    "kind": "raw_dataset",
+    "producedBy": "discovery",
+    "content": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      },
+      {
+        "id": 4
+      },
+      {
+        "id": 5
+      }
+    ],
+    "confidence": 1,
+    "id": "c20025a7-4210-4ef6-a4d7-115c1ca334bc",
+    "taskId": "test-task-1776092534105",
+    "createdAt": "2026-04-13T15:02:14.112Z"
+  }
+]

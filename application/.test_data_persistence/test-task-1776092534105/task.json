@@ -1,0 +1,26 @@
+{
+  "id": "test-task-1776092534105",
+  "input": {
+    "requestId": "test-task-1776092534105",
+    "targetSpec": "example.com",
+    "requestedSchema": {},
+    "constraints": {
+      "budgetUsd": 0,
+      "maxTimeMs": 0,
+      "requiresJsRendering": false,
+      "humanReviewAllowed": false,
+      "proxyTier": "standard",
+      "antiBotRisk": "low",
+      "authenticationRequired": false
+    }
+  },
+  "outputGoal": [
+    "final_result"
+  ],
+  "status": "submitted",
+  "governance": {
+    "humanReviewRequired": false
+  },
+  "createdAt": "2026-04-13T15:02:14.106Z",
+  "updatedAt": "2026-04-13T15:02:14.109Z"
+}

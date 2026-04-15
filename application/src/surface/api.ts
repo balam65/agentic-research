@@ -1,6 +1,6 @@
 import { buildDashboardSnapshot } from './dashboard.js';
-import { AgenticOrchestrator } from '../intelligence/orchestrator.js';
-import { RoutingDecision, WorkflowEventInput } from '../world_model/schema.js';
+import { AgenticOrchestrator } from '../core/orchestrator.js';
+import { RoutingDecision, WorkflowEventInput } from '../memory/schema.js';
 
 export class SurfaceApi {
   constructor(private readonly orchestrator: AgenticOrchestrator) {}
